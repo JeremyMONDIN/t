@@ -140,7 +140,7 @@ void agir(pnj_t * perso);
  * Cette fonction constitue la boucle principale du moteur
  * de simulation.
  */
-void etape_suivante(pnj_list_t* pnj_l, decor_list_t* decor_l);
+void etape_suivante(pnj_list_t* pnj_l, decor_list_t* decor_l, int faim);
 
 /**
  * @brief Affiche l'état courant du monde.

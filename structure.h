@@ -4,6 +4,8 @@
 #include <SDL2/SDL.h>
 
 extern int print_var;
+extern int print_texte;
+extern int affichage_graphique;
 
 #define max(a,b) ((a)>(b)?(a):(b))
 #define min(a,b) ((a)<(b)?(a):(b))
@@ -30,6 +32,18 @@ typedef struct espece{
     caract_t caract;
 } espece_t;
 
+typedef struct maillon_traj{
+    float s;
+    float a;
+    float r;
+} maillon_traj_t;
+
+typedef struct traj{
+    int recomp_totale;
+    int taille;
+    maillon_traj_t ** liste;
+} traj_t;
+
 typedef struct pnj{
     espece_t* espece;
     int energie;
@@ -38,6 +52,9 @@ typedef struct pnj{
     caract_t caract;
     SDL_Rect pos;
     etat_t etat;
+    int lock_repro;
+    int lock_anim;
+    traj_t trajectoire;
 } pnj_t;
 
 typedef struct pnj_list{
@@ -94,6 +111,12 @@ typedef struct decor_grid{
     int taille_h;
     decor_list_t *** grid;
 } decor_grid_t;
+
+
+
+
+
+
 
 /*typedef enum {
     ENTITY_PNJ,

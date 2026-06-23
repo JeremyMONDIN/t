@@ -24,7 +24,7 @@ void dessiner_fenetre(SDL_Window * window, SDL_Renderer * renderer,
 //affiche un PNJ
 void afficher_PNJ(SDL_Window * window, SDL_Renderer * renderer,
                   pnj_t * entite){
-    //if (print_var) printf("afficher_pnj\n");
+    if (print_var) printf("afficher_pnj\n");
     SDL_Rect source = {0, 0, 0, 0},
              position = entite->pos;
     
@@ -36,7 +36,7 @@ void afficher_PNJ(SDL_Window * window, SDL_Renderer * renderer,
 //affiche un decor
 void afficher_decor(SDL_Window * window, SDL_Renderer * renderer,
                   decor_t * decor){
-    //if (print_var) printf("afficher_decor\n");
+    if (print_var) printf("afficher_decor\n");
     SDL_Rect source = {0, 0, 0, 0},
              position = decor->pos;
     

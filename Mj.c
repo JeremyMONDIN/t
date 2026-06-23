@@ -13,8 +13,6 @@
 #include "Mj.h"
 #include "structure.h"
 
-
-
 void init_monde()
 {
     if (print_var)
@@ -56,8 +54,7 @@ void add_pnj(espece_t *espece, SDL_Rect pos)
         printf("add_pnj\n");
     pnj_t *new = create_pnj(espece, 100, espece->caract, pos, 100, 100);
     place_pnj_in_grid(monde_pnj, new);
-    printf("add\n");
-    add_pnj_to_list(pnj_l,new);
+    add_pnj_to_list(pnj_l, new);
 }
 
 void add_decor(int id, SDL_Texture *visuel, int id_etat, int rang, SDL_Rect pos)
@@ -66,7 +63,7 @@ void add_decor(int id, SDL_Texture *visuel, int id_etat, int rang, SDL_Rect pos)
         printf("add decor\n");
     decor_t *new = create_decor(id, visuel, id_etat, rang, pos);
     place_decor_in_grid(monde_decor, new);
-    add_decor_to_list(decor_l,new);
+    add_decor_to_list(decor_l, new);
 }
 
 static int check_food(int a, int b)
@@ -85,7 +82,7 @@ perception_t donne_perception(pnj_grid_t *monde_pnj, decor_grid_t *monde_decor, 
 {
     if (print_var)
         printf("donne_perception\n");
-    int radius = perso->caract.vision,
+    int radius = perso->caract.vision * 8,
         x = perso->pos.x,
         y = perso->pos.y,
         case_x = wrap((x - radius), monde_pnj->taille_w * monde_pnj->nb_case_x) / monde_pnj->nb_case_x,
@@ -130,11 +127,11 @@ perception_t donne_perception(pnj_grid_t *monde_pnj, decor_grid_t *monde_decor, 
             {
                 for (int k = 0; k < l_pnj->nb_pnj; k++)
                 {
-                    if (check_food(perso->espece->alim, l_pnj->list[k]->espece->alim))
+
+                    d = dist(perso->pos, l_pnj->list[k]->pos);
+                    if (d <= radius)
                     {
-                        d = dist(perso->pos, l_pnj->list[k]->pos);
-                        if (d <= radius)
-                        {
+                        if (perso != l_pnj->list[k]){
                             if (perso->espece == l_pnj->list[k]->espece)
                             {
                                 per.nb_allie++;
@@ -146,26 +143,24 @@ perception_t donne_perception(pnj_grid_t *monde_pnj, decor_grid_t *monde_decor, 
                             }
                             else
                             {
-                                if (l_pnj->list[k]->espece->alim > 0 && l_pnj->list[k]->caract.force > perso->caract.force / coef_ennemi_proie)
-                                {
+                                if (l_pnj->list[k]->espece->alim > 0 && l_pnj->list[k]->caract.force > perso->caract.force / coef_ennemi_proie){
                                     per.nb_ennemi++;
                                     if (d <= e_min)
                                     {
                                         per.ennemi = l_pnj->list[k];
                                         e_min = d;
-                                    }
+                                    }   
                                 }
                                 else
                                 {
                                     per.nb_proie++;
-                                    if (d <= p_min)
-                                    {
+                                    if (d <= p_min){
                                         per.proie = l_pnj->list[k];
                                         p_min = d;
                                     }
                                 }
-                            }
                         }
+                    }
                     }
                 }
             }
@@ -189,9 +184,10 @@ void agir(pnj_t *perso)
     switch (perso->etat.id)
     {
     case 0: // mourir
-        if (perso->etat.step == 5) mourir(perso); 
+        if (perso->etat.step == 5)
+            mourir(perso);
         perso->etat.step++;
-        //printf("cause mort = %d\n",perso->faim);
+        // printf("cause mort = %d\n",perso->faim);
         break;
     case 1: // explorer
         explorer(perso, perso->etat.x, perso->etat.y);
@@ -203,6 +199,7 @@ void agir(pnj_t *perso)
         defendre(perso, (pnj_t *)perso->etat.para);
         break;
     case 4: // chasser
+        if(perso->espece->alim == 1) printf("%p cible %p\n",perso,perso->etat.para);
         chasser(perso, (pnj_t *)perso->etat.para);
         break;
     case 5: // reproduction
@@ -221,46 +218,70 @@ void agir(pnj_t *perso)
     }
 }
 
-void etape_suivante(pnj_list_t* pnj_l, decor_list_t* decor_l)
+void etape_suivante(pnj_list_t *pnj_l, decor_list_t *decor_l, int faim)
 {
     if (print_var)
         printf("etape suivante\n");
-    int pnj_ini=pnj_l->nb_pnj;
-    int k=0;
+    int pnj_ini = pnj_l->nb_pnj;
+    int k = 0;
     for (int i = 0; i < pnj_ini; i++)
     {
         if (pnj_l->list[i]->etat.step <= 0)
-            {
-                reponse_t rep = get_action(pnj_l->list[i]);
-                // printf("act %d",rep.act);
-                pnj_l->list[i]->etat.id = rep.act;
-                pnj_l->list[i]->etat.para = rep.depla;
-                pnj_l->list[i]->etat.x = rep.x;
-                pnj_l->list[i]->etat.y = rep.y;
-                pnj_l->list[i]->etat.step = duree_action;
-            }
-        if (pnj_l->list[i]->etat.id != 0) 
-            printf("%s etat %d %d  x=%d  y=%d \n",pnj_l->list[i]->espece->nom,pnj_l->list[i]->etat.id,pnj_l->list[i]->etat.step,pnj_l->list[i]->pos.x,pnj_l->list[i]->pos.y);
-        //printf("%d %d\n", pnj_l->list[i]->etat.id, pnj_l->list[i]->etat.step);
-        k=sup_pnj_from_grid(monde_pnj,pnj_l->list[i]);
-        agir(pnj_l->list[i]);
-        if (pnj_l->list[i]->etat.id != 0)  place_pnj_in_grid(monde_pnj,pnj_l->list[i]);
+        {
+            reponse_t rep = get_action(pnj_l->list[i]);
 
-        pnj_l->list[i]->faim = max(0, pnj_l->list[i]->faim - perte_faim * pnj_l->list[i]->caract.force / force_base);
-        if (pnj_l->list[i]->faim == 0)
-            pnj_l->list[i]->vie -= degat_faim;
+            pnj_l->list[i]->etat.id = rep.act;
+            pnj_l->list[i]->etat.para = rep.depla;
+            pnj_l->list[i]->etat.x = rep.x;
+            pnj_l->list[i]->etat.y = rep.y;
+            pnj_l->list[i]->etat.step = duree_action;
+            //if(pnj_l->list[i]->espece->alim == 1) printf("%p trans %p\n",pnj_l->list[i],pnj_l->list[i]->etat.para);
+            /*if (rep.act == 5){
+                pnj_t* love= (pnj_t *)rep.depla;
+                love->etat.id = 5;
+                love->etat.para = pnj_l->list[i],
+                love->etat.x = rep.x;
+                love->etat.y = rep.y;
+                love->etat.step = duree_action;
+                
+            }*/
+        }
+        if (print_texte && pnj_l->list[i]->etat.id != 0)
+            printf("%s  stat %d %d %d etat %d %d  x=%d  y=%d  point=%p\n", 
+                pnj_l->list[i]->espece->nom, pnj_l->list[i]->vie, pnj_l->list[i]->energie, pnj_l->list[i]->faim, pnj_l->list[i]->etat.id, pnj_l->list[i]->etat.step, pnj_l->list[i]->pos.x, pnj_l->list[i]->pos.y, pnj_l->list[i]->etat.para);
+        // printf("%d %d\n", pnj_l->list[i]->etat.id, pnj_l->list[i]->etat.step);
+        k = sup_pnj_from_grid(monde_pnj, pnj_l->list[i]);
+        
+        agir(pnj_l->list[i]);
+        
+
+        if (pnj_l->list[i]->etat.id != 0)
+            place_pnj_in_grid(monde_pnj, pnj_l->list[i]);
+
+        if (faim == 0)
+        {
+            pnj_l->list[i]->lock_repro = max(0, pnj_l->list[i]->lock_repro-1);
+            pnj_l->list[i]->faim = max(0, pnj_l->list[i]->faim - perte_faim /**(1 + pnj_l->list[i]->caract.force / force_base)*/);
+            if (pnj_l->list[i]->faim == 0)
+                pnj_l->list[i]->vie -= degat_faim;
+        }
         if (pnj_l->list[i]->vie <= 0 && pnj_l->list[i]->etat.id != 0)
         {
             pnj_l->list[i]->etat.id = 0;
             pnj_l->list[i]->etat.step = 5; // arbitraire pour eviter un nouveau tirage avant la mort
         }
     }
-    int dec_ini=decor_l->nb_decor;
-    for (int j = 0; j < dec_ini; j++){
-        if (decor_l->list[j]->etat.id == 0){
-                kill_decor(monde_decor, &decor_l->list[j]);
-            }
-        printf("id=%d etat %d %d  x=%d  y=%d \n",decor_l->list[j]->type_decor,decor_l->list[j]->etat.id,decor_l->list[j]->etat.step,decor_l->list[j]->pos.x,decor_l->list[j]->pos.y);
+    int dec_ini = decor_l->nb_decor;
+    for (int j = 0; j < dec_ini; j++)
+    {
+        if (decor_l->list[j]->etat.id == 0)
+        {
+            kill_decor(monde_decor, &decor_l->list[j]);
+            decor_l->list[j]->etat.step++;
+        }
+        else if (print_texte)
+            printf("id=%d etat %d %d  x=%d  y=%d\n", 
+                decor_l->list[j]->type_decor, decor_l->list[j]->etat.id, decor_l->list[j]->etat.step, decor_l->list[j]->pos.x, decor_l->list[j]->pos.y);
     }
 }
 

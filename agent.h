@@ -6,6 +6,7 @@
 #include "liste.h"
 
 
+extern int perception_discrete;
 
 float dist(SDL_Rect a, SDL_Rect b);
 

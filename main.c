@@ -23,8 +23,7 @@ const char *chemin_decor = "assets/decors/";
 SDL_Texture *texture_death = NULL;
 
 int width = 1000,
-    height = 700,
-    print_var = 0;
+    height = 700;
 
 pnj_list_t *pnj_l = NULL;
 decor_list_t *decor_l = NULL;
@@ -38,8 +37,10 @@ SDL_Rect taille_monde = {1000, 700, 50, 50};
 int duree_action = 10;
 float coef_ennemi_proie = 1.5;
 
-int perte_faim = 0;
-int degat_faim = 4;
+
+int perte_faim = 5;
+int degat_faim = 15;
+
 
 // action
 
@@ -55,8 +56,8 @@ int gain_faim_plante = 20, // doublé pour la viande
     gain_energie = 10;
 
 // attaque
-int degats_attaque = 10,
-    coef_bonus_force = 5,
+int degats_attaque = 300,
+    coef_bonus_force = 20,
     cout_attaque = 3;
 
 // reproduction
@@ -70,114 +71,176 @@ int regen_energie = 3,
 int force_base = 10,
     vitesse_base = 10,
     vision_base = 50,
-    distance_interaction = 15;
+    distance_interaction = 30;
+
+// variable de menu
+int print_var = 0;
+int print_texte = 0;
+int affichage_graphique = 1;
+
+//parametre global
+int evolution = 0;
+int perception_discrete = 1;
+
+
+char buffer[3];
 
 int main()
 {
+    int loop = 1;
+    while (loop)
+    {
+        printf("Choisir un mode :\n");
+        printf("1 - Graphique on/off \n");
+        printf("2 - Textuel on/off \n");
+        printf("3 - fonction traceback on/off \n");
+        printf("4 - lancer \n");
+        printf("5 - quitter \n");
 
-    srand(time(NULL));
+        printf("\n\nGraphique ");
+        if (affichage_graphique)
+            printf("on\n");
+        else
+            printf("off\n");
+        printf("Textuel ");
+        if (print_texte)
+            printf("on\n");
+        else
+            printf("off\n");
+        printf("fonction traceback ");
+        if (print_var)
+            printf("on\n\n");
+        else
+            printf("off\n\n");
+
+        fgets(buffer, sizeof(buffer), stdin);
+        switch (buffer[0])
+        {
+        case '1':
+            affichage_graphique = !affichage_graphique;
+            break;
+        case '2':
+            print_texte = !print_texte;
+            break;
+        case '3':
+            print_var = !print_var;
+            break;
+        case '4':
+            loop = 0;
+            break;
+        case '5':
+            return 0;
+            break;
+        default:
+            printf("erreur commande invalide\n");
+        }
+    }
+
+    //srand(time(NULL));
 
     SDL_Rect rect = {0, 0, 60, 0},
              user = {0, 0, 1000, 700};
 
     rect.w = width;
     rect.h = height;
-    if (rect.x == 1)
-        rect.x = 1;
-
-    SDL_Event event;
 
     int program_on = 1,
         nb_texture_pnj = 0,
         nb_texture_decor = 0;
 
-    int nb_pnj[4] = {10, 0, 20, 50},
+    int nb_pnj[4] = {30, 0, 30, 30},
         nb_decor[3] = {50, 10, 0};
-
+    // Vitesse, Force, Vision
     caract_t stat_panda = {5, 40, 20};
     caract_t stat_pinguin = {100, 100, 100};
-    caract_t stat_lapin = {10, 7, 50};
+    caract_t stat_lapin = {15, 1, 50};
     caract_t stat_snake = {20, 20, 50};
 
     pnj_grid_t *check_monde_pnj = monde_pnj;
     decor_grid_t *check_monde_decor = monde_decor;
 
-    SDL_Window *window;
-    SDL_Renderer *renderer;
-
-    SDL_Texture *background = NULL;
     SDL_Texture **texture_pnj = malloc(10 * sizeof(SDL_Texture *));
     SDL_Texture **texture_decor = malloc(10 * sizeof(SDL_Texture *));
+
+    SDL_Event event;
+
+    SDL_Window *window = NULL;
+    SDL_Renderer *renderer = NULL;
+
+    SDL_Texture *background = NULL;
 
     pnj_l = init_pnj_list();
     decor_l = init_decor_list();
 
-    // définition des fenêtre et des textures d'affichage
-    printf("init texture\n");
+    if (affichage_graphique)
+    {
+        // définition des fenêtre et des textures d'affichage
+        printf("init texture\n");
 
-    window = SDL_CreateWindow("Grille", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height,
-                              // SDL_WINDOW_FULLSCREEN );
-                              SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
-    if (window == 0)
-    {
-        fprintf(stderr, "Erreur a la creation de la fenetre : %s\n", SDL_GetError());
-        SDL_Delay(5000);
-    }
-    else
-    {
-        renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED); /* | SDL_RENDERER_PRESENTVSYNC */
-        if (renderer == 0)
+        window = SDL_CreateWindow("Grille", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height,
+                                  // SDL_WINDOW_FULLSCREEN );
+                                  SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
+        if (window == 0)
         {
-            fprintf(stderr, "Erreur de creation d'un renderer : %s\n", SDL_GetError());
+            fprintf(stderr, "Erreur a la creation de la fenetre : %s\n", SDL_GetError());
+            SDL_Delay(5000);
         }
-    }
-    SDL_Surface *my_image = NULL;
+        else
+        {
+            renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED); /* | SDL_RENDERER_PRESENTVSYNC */
+            if (renderer == 0)
+            {
+                fprintf(stderr, "Erreur de creation d'un renderer : %s\n", SDL_GetError());
+            }
+        }
+        SDL_Surface *my_image = NULL;
 
-    char *nom = malloc(100 * sizeof(char));
-    sprintf(nom, "%s%s", chemin_background, iamge_background);
-    my_image = IMG_Load(nom);
-    if (!my_image)
-        printf("IMG_Load: %s\n", IMG_GetError());
-    background = SDL_CreateTextureFromSurface(renderer, my_image);
-    if (!background)
-        printf("SDL_CreateTextureFromSurface1: %s\n", IMG_GetError());
-    SDL_FreeSurface(my_image);
-
-    my_image = IMG_Load("assets/decors/Steak.png");
-    if (!my_image)
-        printf("IMG_Load: %s\n", IMG_GetError());
-    texture_death = SDL_CreateTextureFromSurface(renderer, my_image);
-    if (!texture_death)
-        printf("SDL_CreateTextureFromSurface1: %s\n", IMG_GetError());
-    SDL_FreeSurface(my_image);
-
-    while (image_pnj[nb_texture_pnj] != NULL)
-    {
-        sprintf(nom, "%s%s", chemin_pnj, image_pnj[nb_texture_pnj]);
+        char *nom = malloc(100 * sizeof(char));
+        sprintf(nom, "%s%s", chemin_background, iamge_background);
         my_image = IMG_Load(nom);
         if (!my_image)
             printf("IMG_Load: %s\n", IMG_GetError());
-        texture_pnj[nb_texture_pnj] = SDL_CreateTextureFromSurface(renderer, my_image);
-        if (!texture_pnj[nb_texture_pnj])
-            printf("SDL_CreateTextureFromSurface1: %s\n", IMG_GetError());
-        SDL_FreeSurface(my_image);
-        nb_texture_pnj++;
-        free_monde();
-    }
-    while (image_decor[nb_texture_decor])
-    {
-        sprintf(nom, "%s%s", chemin_decor, image_decor[nb_texture_decor]);
-        my_image = IMG_Load(nom);
-        if (!my_image)
-            printf("IMG_Load: %s\n", IMG_GetError());
-        texture_decor[nb_texture_decor] = SDL_CreateTextureFromSurface(renderer, my_image);
-        if (!texture_decor[nb_texture_decor])
+        background = SDL_CreateTextureFromSurface(renderer, my_image);
+        if (!background)
             printf("SDL_CreateTextureFromSurface1: %s\n", IMG_GetError());
         SDL_FreeSurface(my_image);
 
-        nb_texture_decor++;
+        my_image = IMG_Load("assets/decors/Steak.png");
+        if (!my_image)
+            printf("IMG_Load: %s\n", IMG_GetError());
+        texture_death = SDL_CreateTextureFromSurface(renderer, my_image);
+        if (!texture_death)
+            printf("SDL_CreateTextureFromSurface1: %s\n", IMG_GetError());
+        SDL_FreeSurface(my_image);
+
+        while (image_pnj[nb_texture_pnj] != NULL)
+        {
+            sprintf(nom, "%s%s", chemin_pnj, image_pnj[nb_texture_pnj]);
+            my_image = IMG_Load(nom);
+            if (!my_image)
+                printf("IMG_Load: %s\n", IMG_GetError());
+            texture_pnj[nb_texture_pnj] = SDL_CreateTextureFromSurface(renderer, my_image);
+            if (!texture_pnj[nb_texture_pnj])
+                printf("SDL_CreateTextureFromSurface1: %s\n", IMG_GetError());
+            SDL_FreeSurface(my_image);
+            nb_texture_pnj++;
+            free_monde();
+        }
+        while (image_decor[nb_texture_decor])
+        {
+            sprintf(nom, "%s%s", chemin_decor, image_decor[nb_texture_decor]);
+            my_image = IMG_Load(nom);
+            if (!my_image)
+                printf("IMG_Load: %s\n", IMG_GetError());
+            texture_decor[nb_texture_decor] = SDL_CreateTextureFromSurface(renderer, my_image);
+            if (!texture_decor[nb_texture_decor])
+                printf("SDL_CreateTextureFromSurface1: %s\n", IMG_GetError());
+            SDL_FreeSurface(my_image);
+
+            nb_texture_decor++;
+        }
+        free(nom);
     }
-    free(nom);
 
     // initialisation du monde
     printf("init monde\n");
@@ -185,7 +248,7 @@ int main()
     SDL_Rect pos = {0, 0, 30, 30};
 
     espece_t tab_espece[4] = {
-        create_espece("panda", 0, texture_pnj[0], stat_panda),
+        create_espece("panda", 2, texture_pnj[0], stat_panda),
         create_espece("pinguin", 2, texture_pnj[1], stat_pinguin),
         create_espece("lapin", 0, texture_pnj[2], stat_lapin),
         create_espece("snake", 1, texture_pnj[3], stat_snake)};
@@ -216,25 +279,12 @@ int main()
         add_decor(2, texture_decor[2], 2, 5, pos);
     }
 
-    printf("debut_boucle\n");
     int i = 0, compte = 0;
-    compte = 0;
-    for (int j = 0; j < monde_pnj->nb_case_x; j++)
-    {
-        for (int k = 0; k < monde_pnj->nb_case_y; k++)
-        {
-            compte += monde_pnj->grid[j][k]->nb_pnj;
-        }
-    }
-    printf("boucle %d ***************************** %d\n", i++, compte);
-    while (program_on)
-    {
-        // if(SDL_PollEvent(&event)){
 
-        // user=user_ask(event);
-
-        etape_suivante(pnj_l, decor_l);
-        affichage(window, renderer, background, user);
+    
+    if (print_texte)
+    {
+        
         compte = 0;
         for (int j = 0; j < monde_pnj->nb_case_x; j++)
         {
@@ -244,24 +294,65 @@ int main()
             }
         }
         printf("boucle %d ***************************** %d\n", i++, compte);
-        SDL_RenderPresent(renderer);
-        SDL_Delay(20);
-        if (SDL_PollEvent(&event))
-        {
+    }
 
-            switch (event.type)
+    printf("debut_boucle\n");
+
+    while (program_on)
+    {
+        // if(SDL_PollEvent(&event)){
+
+        // user=user_ask(event);
+
+        etape_suivante(pnj_l, decor_l, i % 30);
+        i++;
+
+        if (print_texte)
+        {
+            compte = 0;
+            for (int j = 0; j < monde_pnj->nb_case_x; j++)
             {
-            case SDL_QUIT:
-                program_on = SDL_FALSE;
-                break;
+                for (int k = 0; k < monde_pnj->nb_case_y; k++)
+                {
+                    compte += monde_pnj->grid[j][k]->nb_pnj;
+                }
+            }
+            printf("boucle %d ***************************** %d\n", i++, compte);
+        }
+
+        if (affichage_graphique)
+        {
+            affichage(window, renderer, background, user);
+            SDL_RenderPresent(renderer);
+            SDL_Delay(20);
+            if (SDL_PollEvent(&event))
+            {
+
+                switch (event.type)
+                {
+                case SDL_QUIT:
+                    program_on = SDL_FALSE;
+                    break;
+                }
             }
         }
 
-        if (i % 10 == 0)
+        if (i % 1000 == 0)
         {
-            pos.x = rand() % width;
-            pos.y = rand() % height;
-            add_decor(1, texture_decor[1], 1, 5, pos);
+            compte = 0;
+            for (int j = 0; j < monde_decor->nb_case_x; j++)
+            {
+                for (int k = 0; k < monde_decor->nb_case_y; k++)
+                {
+                    compte += monde_decor->grid[j][k]->nb_decor;
+                }
+            }
+            if (compte<100){
+                pos.x = rand() % width;
+                pos.y = rand() % height;
+                add_decor(1, texture_decor[1], 1, 5, pos);
+            }
+            
         }
 
         // mettre un compteur de copy dans etat ou direect pnj pour savoir quand supprimé
@@ -318,10 +409,20 @@ int main()
         SDL_DestroyTexture(texture_decor[j]);
     }
 
-    free_list_decor(decor_l);
+
+    for (int i = 0; i < pnj_l->nb_pnj; i++) {
+        free(pnj_l->list[i]);
+    }
     free_list_pnj(pnj_l);
+
+    for (int j = 0; j < decor_l->nb_decor; j++) {
+        free(decor_l->list[j]);
+    }
+    free_list_decor(decor_l);
+    
     free(texture_pnj);
     free(texture_decor);
+
 
     return 0;
 }

@@ -13,6 +13,9 @@ extern pnj_grid_t* monde_pnj;
 extern decor_grid_t* monde_decor;
 extern SDL_Texture* texture_death;
 
+extern int evolution;
+
+
 //mort
 extern float coef_nouriture_par_corp ;
 

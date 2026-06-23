@@ -39,7 +39,7 @@ static void attaquer(pnj_t *attaquant, pnj_t *cible)
 {
     if (print_var)
         printf("attaquer\n");
-    if (attaquant->energie > cout_attaque)
+    if (attaquant->energie > cout_attaque && cible->etat.id != 0)
     {
         float factor = (float)attaquant->caract.force / cible->caract.force;
         attaquant->energie -= cout_attaque;
@@ -48,6 +48,7 @@ static void attaquer(pnj_t *attaquant, pnj_t *cible)
         {
             cible->etat.id = 0;
             cible->etat.step = 5; //arbitraire pour eviter un nouveau tirage avant la mort
+            printf("%s kill %s\n",attaquant->espece->nom,cible->espece->nom);
         }
         attaquant->etat.step--;
     }
@@ -59,24 +60,34 @@ static pnj_t *breed(pnj_t *mere, pnj_t *pere)
 {
     if (print_var)
         printf("breed\n");
-    if (mere->energie > cout_reproduction && pere->energie > cout_reproduction)
+    if (mere->energie > cout_reproduction && pere->energie > cout_reproduction && mere->lock_repro==0 && pere->lock_repro==0)
     {
         pnj_t* enfant=malloc(sizeof(pnj_t));
         enfant->espece = mere->espece;
-        enfant->caract.vitesse = (mere->caract.vitesse + pere->caract.vitesse) / 2 + rand() % 5 - 2;
-        enfant->caract.force = (mere->caract.force + pere->caract.force) / 2 + rand() % 5 - 2;
-        enfant->caract.vision = (mere->caract.vision + pere->caract.vision) / 2 + rand() % 11 - 5;
+        enfant->caract.vitesse = (mere->caract.vitesse + pere->caract.vitesse) / 2 ;
+        if(evolution) enfant->caract.vitesse += rand() % 5 - 2;
+        enfant->caract.force = (mere->caract.force + pere->caract.force) / 2 ;
+        if(evolution) enfant->caract.force += rand() % 5 - 2;
+        enfant->caract.vision = (mere->caract.vision + pere->caract.vision) / 2 ;
+        if(evolution) enfant->caract.vision += rand() % 5 - 2;
         enfant->pos.x = (mere->pos.x + pere->pos.x) / 2;
         enfant->pos.y = (mere->pos.y + pere->pos.y) / 2;
-        enfant->vie = 100;
-        enfant->energie = 100;
-        enfant->faim = 100;
+        enfant->pos.w = mere->pos.w;
+        enfant->pos.h = mere->pos.h;
+        enfant->vie = 50;
+        enfant->energie = 0;
+        enfant->faim = 50;
         mere->energie -= cout_reproduction;
         pere->energie -= cout_reproduction;
+        mere->etat.step = 0;
+        pere->etat.step = 0;
+        pere->lock_repro=200;
+        mere->lock_repro=200;
+        enfant->lock_repro=200;
         return enfant;
     }
-    else
-        mere->etat.step = 0;
+    mere->etat.step = 0;
+    pere->etat.step = 0;
     return NULL;
 }
 
@@ -84,9 +95,9 @@ static pnj_t *breed(pnj_t *mere, pnj_t *pere)
 
 void mourir(pnj_t *perso)
 {
-    //if (print_var)
+    if (print_var)
         printf("etat_mourir\n");
-    add_decor(2,texture_death,2,floor(coef_nouriture_par_corp * perso->caract.force/force_base),(perso)->pos);
+    add_decor(2,texture_death,2,coef_nouriture_par_corp ,(perso)->pos);
 }
 
 void explorer(pnj_t *perso, int cor_x, int cor_y)
@@ -158,6 +169,7 @@ void chasser(pnj_t *perso, pnj_t *cible)
 {
     if (print_var)
         printf("etat_chasser\n");
+    if(perso->espece->alim == 1) printf("%p chasse %p\n",perso,cible);
     if (perso != NULL && cible != NULL)
     {
         float d = quad(perso->pos.x - cible->pos.x) + quad(perso->pos.y - cible->pos.y);
@@ -190,7 +202,9 @@ void reproduction(pnj_t *perso, pnj_t *cible)
         else
         {
             pnj_t *bebe = breed(perso, cible);
+            
             if (bebe){
+            
                 place_pnj_in_grid(monde_pnj, bebe);
                 add_pnj_to_list(pnj_l, bebe);
             }
@@ -209,7 +223,7 @@ void fuir(pnj_t *perso, pnj_t *cible)
     if (perso != NULL && cible != NULL)
     {
         float d = quad(perso->pos.x - cible->pos.x) + quad(perso->pos.y - cible->pos.y);
-        if (d < perso->caract.vision)
+        if (d < perso->caract.vision * 8)
         {
             deplacement_elmentaire(perso, (perso->pos.x - cible->pos.x) * 4, (perso->pos.y - cible->pos.y) * 4, perso->caract.vitesse);
         }
