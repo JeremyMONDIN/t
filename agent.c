@@ -262,7 +262,8 @@ reponse_t reaction(perception_t p)
 {
     float s = construire_etat(p);
 
-    int action_id = choisir_action(s);
+    // Choisir l'action selon le type d'espèce et ses paramètres theta
+    int action_id = choisir_action_espece(s, p.perso->espece, 7, 5);
 
     int x = p.perso->pos.x + rand()%100 - 50;
     int y = p.perso->pos.y + rand()%100 - 50;

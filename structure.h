@@ -30,6 +30,8 @@ typedef struct espece{
     int alim;
     SDL_Texture * visuel;
     caract_t caract;
+    float * theta;
+    int trained;
 } espece_t;
 
 typedef struct maillon_traj{

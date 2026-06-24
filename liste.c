@@ -53,6 +53,18 @@ int sup_pnj_from_list(pnj_list_t *list, pnj_t *pnj) {
 void free_list_pnj(pnj_list_t * l){
     if (print_var) printf("free_list_pnj\n");
     if (l!=NULL){
+        for (int i=0; i<l->nb_pnj; i++){
+            // Libérer les éléments de la trajectoire
+            if (l->list[i]->trajectoire.liste != NULL) {
+                for (int j = 0; j < l->list[i]->trajectoire.taille; j++) {
+                    free(l->list[i]->trajectoire.liste[j]);
+                }
+            free(l->list[i]->trajectoire.liste);
+            }
+
+            // PUIS libérer le PNJ lui-même
+            free(l->list[i]);
+        }
         free(l->list);
         free(l);
     }

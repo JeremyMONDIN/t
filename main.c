@@ -10,9 +10,6 @@
 #include "moteur_rendu.h"
 #include "reinforce.h"
 
-
-extern float theta[];
-
 char *iamge_background = "backgroundColorFall.png";
 char *image_pnj[5] = {"panda.png", "penguin.png", "rabbit.png", "snake.png", NULL};
 char *image_decor[4] = {"Carotte.png", "Potato.png", "Steak.png", NULL};
@@ -257,6 +254,10 @@ int main()
         create_espece("lapin", 0, texture_pnj[2], stat_lapin),
         create_espece("snake", 1, texture_pnj[3], stat_snake)};
 
+    for (int i = 0; i < 4; i++) {
+        tab_espece[i].theta = calloc(7 * 5, sizeof(float));
+    }
+
     for (int i = 0; i < 4; i++)
     {
         for (int j = 0; j < nb_pnj[i]; j++)
@@ -324,27 +325,37 @@ int main()
             printf("boucle %d ***************************** %d\n", i++, compte);
         }
 
-        if (i % 200 == 0)
-        {
-        int N = pnj_l->nb_pnj;
-
-        traj_t **trajectoires = malloc(N * sizeof(traj_t*));
-        int *tailles = malloc(N * sizeof(int));
-
-        for (int j = 0; j < N; j++)
-        {
-            trajectoires[j] = &pnj_l->list[j]->trajectoire;
-            tailles[j] = pnj_l->list[j]->trajectoire.taille;
-        }
-
-        algo_REINFORCE(0.99, N, 0.01,
-                   0.2, 5, 7,
-                   trajectoires,
-                   theta,
-                   tailles);
-
-        free(trajectoires);
-        free(tailles);
+                // main.c - Entraîner chaque espèce séparément (chaque 200 pas)
+        if (i % 200 == 0) {
+            // Entraîner CHAQUE espèce avec SES PROPRES trajectoires
+            for (int e = 0; e < 3; e++) {
+                // Collecter les trajectoires de cette espèce uniquement
+                int N_espece = 0;
+                for (int j = 0; j < pnj_l->nb_pnj; j++) {
+                    if (pnj_l->list[j]->espece->alim == e) N_espece++;
+                }
+                
+                if (N_espece > 0) {
+                    traj_t **traj_espece = malloc(N_espece * sizeof(traj_t*));
+                    int *tailles = malloc(N_espece * sizeof(int));
+                    
+                    int k = 0;
+                    for (int j = 0; j < pnj_l->nb_pnj; j++) {
+                        if (pnj_l->list[j]->espece->alim == e) {
+                            traj_espece[k] = &pnj_l->list[j]->trajectoire;
+                            tailles[k] = pnj_l->list[j]->trajectoire.taille;
+                            k++;
+                        }
+                    }
+                    
+                    // Entraîner avec theta de CETTE espèce
+                    algo_REINFORCE(0.99, N_espece, 0.01, 0.2, 5, 7,
+                                traj_espece, tab_espece[e].theta, tailles);
+                    
+                    free(traj_espece);
+                    free(tailles);
+                }
+            }
         }
 
         if (affichage_graphique)
@@ -386,7 +397,7 @@ int main()
 
         /*if (i % 100 == 0) // libere les entité mort depus longtemps
         {
-            int pnj_ini = pnj_l->nb_pnj;
+            int pnj_ini = pnj_l->nb_pnj;liste = malloc(1000 * sizeof(maillon_traj_t*));
             int j = 0;
 
             for (int i = 0; i < pnj_ini; i++)

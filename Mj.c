@@ -322,6 +322,4 @@ void affichage(SDL_Window *window, SDL_Renderer *renderer, SDL_Texture *backgrou
     {
         afficher_decor(window, renderer, l_decor->list[i]);
     }
-    free_list_pnj(l_pnj);
-    free_list_decor(l_decor);
 }

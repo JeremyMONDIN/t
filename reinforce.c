@@ -76,9 +76,9 @@ void algo_REINFORCE(float gamma, int N, float alpha, float ecart_type, int nb_ce
         
         for (int u = 0; u < T; u++){
             int t = T - 1 - u;
-            float s = traj->liste[t][0].s; //(s,a,r)
-            int action = traj->liste[t][1].a;
-            float reward = traj->liste[t][2].r;
+            float s = traj->liste[t]->s; 
+            int action = traj->liste[t]->a;  
+            float reward = traj->liste[t]->r; 
 
             G = reward + gamma * G;
             float GG = puissance(gamma,t) * G;
@@ -104,7 +104,7 @@ void algo_REINFORCE(float gamma, int N, float alpha, float ecart_type, int nb_ce
             theta[a * nb_centres + k]= alpha * (1.0/N) * D[a * nb_centres + k]; //2D => 1D
         }
     }
+    }
     free(D);
     free(P);
-    }
 }

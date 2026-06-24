@@ -1,49 +1,70 @@
 #include <stdlib.h>
 #include <math.h>
 #include "rl.h"
+#include "structure.h"
 
 #define NB_ACTIONS 7
 #define NB_CENTRES 5
 
-float theta[NB_ACTIONS * NB_CENTRES] = {0};
+// Dans une fonction d'initialisation
+void initialiser_espece_rl(espece_t * espece, int nb_actions, int nb_centres) {
+    espece->theta = calloc(nb_actions * nb_centres, sizeof(float));
+    espece->trained = 0;
+}
 
-// calcule probabilités (softmax)
-void calculer_proba(float s, float *P)
+// Créer une wrapper dans rl.c
+void entrainer_espece(espece_t * espece, 
+                      traj_t ** trajectoires, 
+                      int * tailles_traj,
+                      int N, 
+                      int nb_actions,
+                      int nb_centres)
 {
+    float gamma = 0.999;
+    float alpha = 0.01;  // taux d'apprentissage
+    float ecart_type = 0.2;
+    
+    algo_REINFORCE(gamma, N, alpha, ecart_type, 
+                   nb_centres, nb_actions, 
+                   trajectoires, espece->theta, tailles_traj);
+    
+    espece->trained = 1;
+}
+
+int choisir_action_espece(float s, espece_t * espece, int nb_actions, int nb_centres)
+{
+    float * P = malloc(nb_actions * sizeof(float));
     float sigma = 0.2;
     float somme = 0;
 
-    for (int a = 0; a < NB_ACTIONS; a++)
+    for (int a = 0; a < nb_actions; a++)
     {
         float score = 0;
-        for (int k = 0; k < NB_CENTRES; k++)
+        for (int k = 0; k < nb_centres; k++)
         {
-            float centre = (float)k / (NB_CENTRES - 1);
-            score += theta[a * NB_CENTRES + k] * phi(s, centre, sigma);
+            float centre = (float)k / (nb_centres - 1);
+            score += espece->theta[a * nb_centres + k] * phi(s, centre, sigma);
         }
-
         P[a] = exp(score);
         somme += P[a];
     }
 
-    for (int a = 0; a < NB_ACTIONS; a++)
+    for (int a = 0; a < nb_actions; a++)
         P[a] /= somme;
-}
-
-// tirage aléatoire
-int choisir_action(float s)
-{
-    float P[NB_ACTIONS];
-    calculer_proba(s, P);
 
     float r = (float)rand() / RAND_MAX;
     float cumul = 0;
 
-    for (int a = 0; a < NB_ACTIONS; a++)
+    int action = 0;
+    for (int a = 0; a < nb_actions; a++)
     {
         cumul += P[a];
-        if (r < cumul) return a;
+        if (r < cumul) {
+            action = a;
+            break;
+        }
     }
-
-    return NB_ACTIONS - 1;
+    
+    free(P);
+    return action;
 }
