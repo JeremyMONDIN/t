@@ -61,7 +61,7 @@ void add_decor(int id, SDL_Texture *visuel, int id_etat, int rang, SDL_Rect pos)
 {
     if (print_var)
         printf("add decor\n");
-    decor_t *new = create_decor(id, visuel, id_etat, rang, pos);
+    decor_t *new = create_decor(id, visuel, id_etat, id_etat, pos);
     place_decor_in_grid(monde_decor, new);
     add_decor_to_list(decor_l, new);
 }
@@ -270,7 +270,7 @@ void etape_suivante(pnj_list_t *pnj_l, decor_list_t *decor_l, int faim)
         }
         if (print_texte && pnj_l->list[i]->etat.id != 0)
             printf("%s  stat %d %d %d etat %d %d  x=%d  y=%d  point=%p\n", 
-                pnj_l->list[i]->espece->nom, pnj_l->list[i]->vie, pnj_l->list[i]->energie, pnj_l->list[i]->faim, pnj_l->list[i]->etat.id, pnj_l->list[i]->etat.step, pnj_l->list[i]->pos.x, pnj_l->list[i]->pos.y, pnj_l->list[i]->etat.para);
+                pnj_l->list[i]->espece->nom, pnj_l->list[i]->vie, pnj_l->list[i]->energie, pnj_l->list[i]->faim, pnj_l->list[i]->etat.id, pnj_l->list[i]->etat.step, pnj_l->list[i]->pos.x, pnj_l->list[i]->pos.y);
         // printf("%d %d\n", pnj_l->list[i]->etat.id, pnj_l->list[i]->etat.step);
         k = sup_pnj_from_grid(monde_pnj, pnj_l->list[i]);
         
@@ -307,6 +307,23 @@ void etape_suivante(pnj_list_t *pnj_l, decor_list_t *decor_l, int faim)
     }
 }
 
+// Shallow free - libère SEULEMENT la copie locale, pas les vraies données
+void free_list_pnj_shallow(pnj_list_t * l){
+    if (print_var) printf("free_list_pnj_shallow\n");
+    if (l != NULL){
+        free(l->list);
+        free(l);
+    }
+}
+
+void free_list_decor_shallow(decor_list_t * l){
+    if (print_var) printf("free_list_decor_shallow\n");
+    if (l != NULL){
+        free(l->list);
+        free(l);
+    }
+}
+
 void affichage(SDL_Window *window, SDL_Renderer *renderer, SDL_Texture *background, SDL_Rect rect)
 {
     if (print_var)
@@ -322,4 +339,7 @@ void affichage(SDL_Window *window, SDL_Renderer *renderer, SDL_Texture *backgrou
     {
         afficher_decor(window, renderer, l_decor->list[i]);
     }
+    // Libérer SEULEMENT les listes locales (shallow free)
+    free_list_pnj_shallow(l_pnj);
+    free_list_decor_shallow(l_decor);
 }
