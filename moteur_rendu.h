@@ -34,4 +34,8 @@ void afficher_PNJ(SDL_Window * window, SDL_Renderer * renderer,
 */
 void afficher_decor(SDL_Window * window, SDL_Renderer * renderer,
                   decor_t * decor);
+
+void affiche_fond2(SDL_Window *window, SDL_Renderer *renderer,
+                  SDL_Texture *texture, SDL_Rect rect);
+
 #endif

@@ -169,7 +169,7 @@ void chasser(pnj_t *perso, pnj_t *cible)
 {
     if (print_var)
         printf("etat_chasser\n");
-    if(perso->espece->alim == 1) printf("%p chasse %p\n",perso,cible);
+    //if(perso->espece->alim == 1) printf("%p chasse %p\n",perso,cible);
     if (perso != NULL && cible != NULL)
     {
         float d = quad(perso->pos.x - cible->pos.x) + quad(perso->pos.y - cible->pos.y);

@@ -8,7 +8,7 @@ CFLAGS = -Wall -Wextra -g -O0 -fsanitize=address,undefined
 LDFLAGS = -fsanitize=address,undefined
 LDLIBS = -lSDL2 -lSDL2_image -lm
 
-SRC = main.c Mj.c moteur_rendu.c agent.c action.c liste.c grid.c user.c
+SRC = main.c Mj.c moteur_rendu.c agent.c action.c liste.c grid.c user.c rl.c reinforce.c
 OBJ = $(SRC:.c=.o)
 DEP = $(OBJ:.o=.d)
 

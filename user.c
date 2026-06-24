@@ -16,7 +16,7 @@ SDL_Rect get_demande(SDL_Event event){
         case SDL_QUIT :
             rect.h=4;                 // Il est temps d'arrêter le programme
             break;
-                
+
         case SDL_KEYDOWN:     
 
             switch (event.key.keysym.sym) {
@@ -82,30 +82,33 @@ SDL_Rect get_demande(SDL_Event event){
 }
 
 
-void user_modif(SDL_Rect *rect,SDL_Rect *user,SDL_Event event,int *prog_on,int *temp_on){
+void user_modif(SDL_Rect rect,SDL_Rect *user,int *prog_on,int *temp_on){
     int c_x,c_y;
-    switch (user->h)
+    switch (rect.h)
             {
             case 1:            //deplace
-                rect->x+=-user->x;
-                rect->y+=-user->y;
+            printf("deplace\n");
+                user->x -= rect.x;
+                user->y -= rect.y;
                 break;
             case 2:            //selection entity
+                printf("click\n");
                 
                 break;
             case 3:            //zoom
-                if (10>(rect->w+user->w)) 
-                    rect->w  = 10;
-                else 
-                    rect->w = rect->w+user->w;
+                printf("zoom\n");
+                user->w = max(100,user->w + rect.w);
+                user->h = max(100,user->h + rect.w);
                 break;
             case 4:            //quitter
+            printf("quite\n");
                 *prog_on = 0;
                 break;
             case 5:            
                 
                 break;
             case 6:            //pause
+            printf("pause\n");
                 *temp_on=!*temp_on;
                 break;
             
@@ -113,5 +116,4 @@ void user_modif(SDL_Rect *rect,SDL_Rect *user,SDL_Event event,int *prog_on,int *
                 break;
             }
             //printf("user %d %d %d %d\n",user.x,user.y,user.w,user.h);
-            user->h=0;
 }

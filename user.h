@@ -13,7 +13,7 @@ SDL_Rect get_demande(SDL_Event event);
 /**
  * 
  */
-void user_modif(SDL_Rect *rect,SDL_Rect *user,SDL_Event event,int *prog_on,int *temp_on);
+void user_modif(SDL_Rect rect,SDL_Rect *user,int *prog_on,int *temp_on);
 
 
 #endif

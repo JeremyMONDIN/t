@@ -199,7 +199,7 @@ void agir(pnj_t *perso)
         defendre(perso, (pnj_t *)perso->etat.para);
         break;
     case 4: // chasser
-        if(perso->espece->alim == 1) printf("%p cible %p\n",perso,perso->etat.para);
+        //if(perso->espece->alim == 1) printf("%p cible %p\n",perso,perso->etat.para);
         chasser(perso, (pnj_t *)perso->etat.para);
         break;
     case 5: // reproduction
@@ -229,6 +229,28 @@ void etape_suivante(pnj_list_t *pnj_l, decor_list_t *decor_l, int faim)
         if (pnj_l->list[i]->etat.step <= 0)
         {
             reponse_t rep = get_action(pnj_l->list[i]);
+            
+            pnj_t *p = pnj_l->list[i];
+
+            // état simple
+            float s = (float)p->faim / 100.0;
+
+            // reward simple
+            float reward = 0;
+            if (p->etat.id == 2) reward += 10;
+            if (p->etat.id == 4) reward += 20;
+            if (p->vie <= 0) reward -= 50;
+            reward += 1;
+
+            // ajout trajectoire
+            int t = p->trajectoire.taille;
+
+            p->trajectoire.liste[t] = malloc(sizeof(maillon_traj_t));
+            p->trajectoire.liste[t]->s = s;
+            p->trajectoire.liste[t]->a = rep.act;
+            p->trajectoire.liste[t]->r = reward;
+
+            p->trajectoire.taille++;
 
             pnj_l->list[i]->etat.id = rep.act;
             pnj_l->list[i]->etat.para = rep.depla;

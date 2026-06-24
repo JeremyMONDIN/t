@@ -3,6 +3,19 @@
 
 int taille_liste_base = 100;
 
+traj_t init_traj()
+{
+    traj_t t;;
+    t.taille = 0;
+    t.recomp_totale = 0;
+
+    t.liste = malloc(1000 * sizeof(maillon_traj_t*));
+
+    for (int i = 0; i < 1000; i++)
+        t.liste[i] = NULL;
+    return t;
+}
+
 pnj_list_t * init_pnj_list(){
     pnj_list_t* l=malloc(sizeof(pnj_list_t));
     l->list = (pnj_t**)malloc(taille_liste_base * sizeof(pnj_t*));

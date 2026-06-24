@@ -2,6 +2,7 @@
 #include "liste.h"
 #include "agent.h"
 #include <math.h>
+#include "rl.h"
 
 
 
@@ -41,7 +42,7 @@ reponse_t action(int s, int x, int y, decor_t* nourriture, pnj_t* allie, pnj_t* 
         rep.depla= NULL;
         break;
     }
-    if(s==3) printf("action %d proie  %p,ennemie  %p\n",s,proie,ennemi);
+
     return rep;
 }
 
@@ -133,12 +134,14 @@ reponse_t reaction_entite(perception_t per,float tab[7][14])
     int nb_nourriture = min(per.nb_nouriture,5);
     int nb_ennemi = min(per.nb_ennemi,5);
     int nb_allie = min(per.nb_allie,5);
+    int nb_proie = min(per.nb_allie,5);
     
     float rapport_force = 0,
           rapport_vitesse = 0,
           d_nourriture = 0,
           d_ennemi = 0,
-          d_allie = 0;
+          d_allie = 0,
+          d_proie = 0;
 
     if (per.ennemi != NULL){
         if (perception_discrete) d_ennemi = floor(4 * dist(per.perso->pos, per.ennemi->pos) / per.perso->caract.vision);
@@ -156,6 +159,11 @@ reponse_t reaction_entite(perception_t per,float tab[7][14])
             else rapport_vitesse = 0;
         }
     }
+    if (per.proie != NULL){
+        if (perception_discrete) d_proie = floor(4 * dist(per.perso->pos, per.proie->pos) / per.perso->caract.vision);
+        else d_ennemi = 1/(1 + dist(per.perso->pos, per.proie->pos));
+    }
+
     if (per.nouriture != NULL) {
         if (perception_discrete) d_nourriture = floor(4 * dist(per.perso->pos, per.nouriture->pos) / per.perso->caract.vision);
         else d_nourriture = 1/(1 + dist(per.perso->pos, per.nouriture->pos));
@@ -172,19 +180,19 @@ reponse_t reaction_entite(perception_t per,float tab[7][14])
     //mise a jour des intérers
 
     // explorer
-    T[0] = somme_tab( tab, 0, vie, energie, faim, nb_nourriture, nb_allie, nb_ennemi, 0, d_nourriture, d_allie, d_ennemi, 0, rapport_force, rapport_vitesse);
+    T[0] = somme_tab( tab, 0, vie, energie, faim, nb_nourriture, nb_allie, nb_ennemi, nb_proie, d_nourriture, d_allie, d_ennemi, d_proie, rapport_force, rapport_vitesse);
     // manger
-    T[1] = somme_tab( tab, 1, vie, energie, faim, nb_nourriture, nb_allie, nb_ennemi, 0, d_nourriture, d_allie, d_ennemi, 0, rapport_force, rapport_vitesse);
+    T[1] = somme_tab( tab, 1, vie, energie, faim, nb_nourriture, nb_allie, nb_ennemi, nb_proie, d_nourriture, d_allie, d_ennemi, d_proie, rapport_force, rapport_vitesse);
     // defendre
-    T[2] = somme_tab( tab, 2, vie, energie, faim, nb_nourriture, nb_allie, nb_ennemi, 0, d_nourriture, d_allie, d_ennemi, 0, rapport_force, rapport_vitesse);
+    T[2] = somme_tab( tab, 2, vie, energie, faim, nb_nourriture, nb_allie, nb_ennemi, nb_proie, d_nourriture, d_allie, d_ennemi, d_proie, rapport_force, rapport_vitesse);
     //chaser
-    T[3] = somme_tab( tab, 3, vie, energie, faim, nb_nourriture, nb_allie, nb_ennemi, 0, d_nourriture, d_allie, d_ennemi, 0, rapport_force, rapport_vitesse);
+    T[3] = somme_tab( tab, 3, vie, energie, faim, nb_nourriture, nb_allie, nb_ennemi, nb_proie, d_nourriture, d_allie, d_ennemi, d_proie, rapport_force, rapport_vitesse);
     // reproduction
-    T[4] = somme_tab( tab, 4, vie, energie, faim, nb_nourriture, nb_allie, nb_ennemi, 0, d_nourriture, d_allie, d_ennemi, 0, rapport_force, rapport_vitesse);
+    T[4] = somme_tab( tab, 4, vie, energie, faim, nb_nourriture, nb_allie, nb_ennemi, nb_proie, d_nourriture, d_allie, d_ennemi, d_proie, rapport_force, rapport_vitesse);
     // fuite
-    T[5] = somme_tab( tab, 5, vie, energie, faim, nb_nourriture, nb_allie, nb_ennemi, 0, d_nourriture, d_allie, d_ennemi, 0, rapport_force, rapport_vitesse);
+    T[5] = somme_tab( tab, 5, vie, energie, faim, nb_nourriture, nb_allie, nb_ennemi, nb_proie, d_nourriture, d_allie, d_ennemi, d_proie, rapport_force, rapport_vitesse);
     // repos
-    T[6] = somme_tab( tab, 6, vie, energie, faim, nb_nourriture, nb_allie, nb_ennemi, 0, d_nourriture, d_allie, d_ennemi, 0, rapport_force, rapport_vitesse);
+    T[6] = somme_tab( tab, 6, vie, energie, faim, nb_nourriture, nb_allie, nb_ennemi, nb_proie, d_nourriture, d_allie, d_ennemi, d_proie, rapport_force, rapport_vitesse);
 
     //printf("T = %f %f %f %f %f %f %f\n",T[0],T[1],T[2],T[3],T[4],T[5],T[6]);
 
@@ -193,7 +201,7 @@ reponse_t reaction_entite(perception_t per,float tab[7][14])
     float compt = 0;
     for (int i = 0; i < 7; i++)
     {
-        T2[i] = exp(T[i] / 40);
+        T2[i] = exp(T[i] / 30);
         compt += T2[i];
     }
 
@@ -236,21 +244,32 @@ reponse_t reaction_entite(perception_t per,float tab[7][14])
 
 
 
+float construire_etat(perception_t p)
+{
+    float s = 0;
+
+    s += 0.3 * (float)p.nb_nouriture / 5.0;
+    s += 0.5 * (float)p.nb_ennemi / 5.0;
+    s += 0.2 * (float)p.nb_allie / 5.0;
+
+    if (s < 0) s = 0;
+    if (s > 1) s = 1;
+
+    return s;
+}
+
 reponse_t reaction(perception_t p)
 {
-    if (print_var)
-        printf("reaction\n");
-    if (p.perso->espece->alim == 0)
-    {
-        return reaction_entite(p,coef_proie);
-    }
-    else if (p.perso->espece->alim == 1)
-    {
-        //if(p.perso->espece->alim == 1) printf("%p select nb_proie %d %p,nb_ennemie %d %p\n",p.perso,p.nb_proie,p.proie,p.nb_ennemi,p.ennemi);
-        return reaction_entite(p,coef_carn);
-    }
-    else
-    {
-        return reaction_entite(p,coef_omni);
-    }
+    float s = construire_etat(p);
+
+    int action_id = choisir_action(s);
+
+    int x = p.perso->pos.x + rand()%100 - 50;
+    int y = p.perso->pos.y + rand()%100 - 50;
+
+    return action(action_id, x, y,
+                  p.nouriture,
+                  p.allie,
+                  p.ennemi,
+                  p.proie);
 }

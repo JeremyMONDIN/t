@@ -1,8 +1,10 @@
 #include <stdio.h>
 #include <math.h>
+#include <stdlib.h>
 
 #include "reinforce.h"
 #include "structure.h"
+
 
 static float val_gamma = 0.999;
 static float min_centre = 0.0;
@@ -21,11 +23,11 @@ float sigma(float * probas, int nb_etats){
     float E_x = 0; //espérance
     float E_x2 = 0; //espérance de X^2
     for (int i=0; i<nb_etats; i++){
-        float E_x = probas[i] * i;
-        float E_x2 = probas[i] * i * i;
+        E_x += probas[i] * i;
+        E_x2 += probas[i] * i * i;
     }
     float Var_x = E_x2 - (E_x * E_x); //Variance
-    return root(Var_x); //Ecart-type
+    return sqrt(Var_x); //Ecart-type
 }
 
 float phi(float s, float centre, float ecart_type){
@@ -34,61 +36,75 @@ float phi(float s, float centre, float ecart_type){
     return exp(val);
 }
 
-float politique_moyenne (float s, float * theta, int nb_centres, float ecart_type){
-
-    float mu = 0.0;
-    for (int i = 0; i<nb_centres ; i++){
-        //Centres unirepartis sur la distance max-min
-        float centre = min_centre + i * (max_centre - min_centre)/(nb_centres-1);
-
-        mu = mu + theta[i] * phi(s,centre,ecart_type);
+void calculer_probabilites(float s, float * theta, int nb_centres, int nb_actions,
+                           float ecart_type, float * P){
+    float somme = 0.0;
+    float centre;
+    for (int i = 0; i <nb_actions; i++){
+        float score_a = 0.0;
+        for (int j = 0; j<nb_centres; j++){
+            if (nb_centres>1)  centre = min_centre + j * (max_centre - min_centre) / (nb_centres - 1);
+            score_a += theta[i * nb_centres + j] * phi(s,centre,ecart_type);
+            //Tableau 2D vu en 1D (theta[i][j], si theta comporte plusieurs valeurs par coords)
+        }
+        P[i] = exp(score_a);
+        somme += P[i];
     }
-
-    return mu;
+    //On normalise
+    for (int i = 0; i< nb_actions;i++){
+        P[i] /= somme;
+    }
 }
 
-void gradient_log_policy(float s, float action, float mu, float ecart_type,
-                         float * theta,
-                         int nb_centres, float * gradient){
-    //Terme commun
-    float score = (action - mu)/puissance(ecart_type,2);
-
-    for (int i = 0; i<nb_centres; i++){
-        float centre = min_centre + i * (max_centre - min_centre)/(nb_centres-1);
-        float phi_i = phi(s,centre,ecart_type);
-
-        gradient[i] = score * phi_i; //gradient du log policy
-    }
-
-}
+//
 
 //version continue du reinforce
-void algo_REINFORCE(float gamma, int N, int alpha, float ecart_type, int nb_centres,
+void algo_REINFORCE(float gamma, int N, float alpha, float ecart_type, int nb_centres, int nb_actions,
                     traj_t ** trajectoires, float * theta, int * tailles_traj){
+    
+    int taille_totale = nb_actions * nb_centres;
+    //Matrice D 
+    float * D = calloc(taille_totale, sizeof(float));
+    //Vecteur de probabilités
+    float * P = malloc(nb_actions * sizeof(float));
 
     for (int i = 0; i<N; i++){
         traj_t * traj = trajectoires[i]; //l'une des trajectoires prises
         int T = tailles_traj[i]; 
         float G = 0.0;
 
-        for (int t = T-1; t>=0; t--){
+        
+        for (int u = 0; u < T; u++){
+            int t = T - 1 - u;
             float s = traj->liste[t][0].s; //(s,a,r)
-            float action = traj->liste[t][1].a;
+            int action = traj->liste[t][1].a;
             float reward = traj->liste[t][2].r;
 
             G = reward + gamma * G;
-            float action_moy = politique_moyenne(s,theta,nb_centres,ecart_type); // == mu
-            
-            float * grad = malloc(nb_centres * sizeof(float));
-            
-            gradient_log_policy(s,action,action_moy,ecart_type,theta,nb_centres,grad);
-            //Maj de theta
-            for (int j = 0; j<nb_centres; j++){
-                theta[j] += alpha * G * grad[j];
+            float GG = puissance(gamma,t) * G;
+
+            calculer_probabilites(s,theta,nb_centres,nb_actions,ecart_type,P);
+            for (int a = 0; a<nb_actions; a++){
+                for (int k = 0; k<nb_centres; k++){
+                    float centre = min_centre + k * (max_centre - min_centre) / (nb_centres -1);
+                    float phi_t_k = phi(s,centre,ecart_type);
+                    float modif_a_k = 0.0;
+
+                    if (a == action){
+                        modif_a_k = phi_t_k;
+                    }
+                    modif_a_k -= P[a] * phi_t_k;
+                    //Tableau 2D vu en 1D
+                    D[a * nb_centres + k] += GG * modif_a_k;
             }
-            free(grad);
-            
         }
-        
+    }
+    for (int a = 0; a<nb_actions; a++){
+        for (int k = 0; k <nb_centres; k++){
+            theta[a * nb_centres + k]= alpha * (1.0/N) * D[a * nb_centres + k]; //2D => 1D
+        }
+    }
+    free(D);
+    free(P);
     }
 }

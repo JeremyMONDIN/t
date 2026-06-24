@@ -4,6 +4,8 @@
 #include "structure.h"
 
 
+traj_t init_traj();
+
 
 /**
  * @brief initialise une liste de pnj

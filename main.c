@@ -8,6 +8,10 @@
 #include "Mj.h"
 #include "agent.h"
 #include "moteur_rendu.h"
+#include "reinforce.h"
+
+
+extern float theta[];
 
 char *iamge_background = "backgroundColorFall.png";
 char *image_pnj[5] = {"panda.png", "penguin.png", "rabbit.png", "snake.png", NULL};
@@ -318,6 +322,29 @@ int main()
                 }
             }
             printf("boucle %d ***************************** %d\n", i++, compte);
+        }
+
+        if (i % 200 == 0)
+        {
+        int N = pnj_l->nb_pnj;
+
+        traj_t **trajectoires = malloc(N * sizeof(traj_t*));
+        int *tailles = malloc(N * sizeof(int));
+
+        for (int j = 0; j < N; j++)
+        {
+            trajectoires[j] = &pnj_l->list[j]->trajectoire;
+            tailles[j] = pnj_l->list[j]->trajectoire.taille;
+        }
+
+        algo_REINFORCE(0.99, N, 0.01,
+                   0.2, 5, 7,
+                   trajectoires,
+                   theta,
+                   tailles);
+
+        free(trajectoires);
+        free(tailles);
         }
 
         if (affichage_graphique)
