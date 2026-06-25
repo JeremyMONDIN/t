@@ -27,12 +27,11 @@ typedef struct espece{
     SDL_Texture * visuel;
     caract_t caract;
     float theta[7][14];
-    int trained;
 } espece_t;
 
 typedef struct maillon_traj{
-    float s;
-    float a;
+    float s[14];
+    int a;
     float r;
 } maillon_traj_t;
 
@@ -110,8 +109,6 @@ typedef struct decor_grid{
     int taille_h;
     decor_list_t *** grid;
 } decor_grid_t;
-
-
 
 
 

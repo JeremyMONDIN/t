@@ -26,21 +26,27 @@ float sigma(float * probas, int nb_etats){
     return sqrt(Var_x); //Ecart-type
 }
 
-float phi(float s, float centre, float ecart_type){
-    float diff = s - centre;
-    float val = -puissance(diff,2) / (2.0*puissance(ecart_type,2));
-    return exp(val);
+void phi(float s[14], float centre, float ecart_type, float p[14]){
+    float diff[14];
+    for(int i=0; i<14; i++){
+        diff[i]=s[i] - centre;
+    }
+    for (int j=0; j<14; j++){
+        p[j] = exp(-puissance(diff[j],2) / (2.0*puissance(ecart_type,2)));
+    }
 }
 
-void calculer_probabilites(float s, float theta[7][14], int nb_centres, int nb_actions,
+void calculer_probabilites(float s[14], float theta[7][14], int nb_centres, int nb_actions,
                            float ecart_type, float * P, int min_centre, int max_centre){
     float somme = 0.0;
-    float centre;
+    float centre = (max_centre-min_centre)/2;
+    float p[14];
+    phi(s,centre,ecart_type,p);
     for (int i = 0; i <nb_actions; i++){
         float score_a = 0.0;
         for (int j = 0; j<nb_centres; j++){
             if (nb_centres>1)  centre = min_centre + j * (max_centre - min_centre) / (nb_centres - 1);
-            score_a += theta[i][j] * phi(s,centre,ecart_type);
+            score_a += theta[i][j] * p[j];
             //Tableau 2D vu en 1D (theta[i][j], si theta comporte plusieurs valeurs par coords)
         }
         P[i] = exp(score_a);
@@ -61,7 +67,7 @@ void algo_REINFORCE(float gamma, int N, float alpha, float ecart_type, int nb_ce
     
     int taille_totale = nb_actions * nb_centres;
     //Matrice D 
-    float * D = calloc(taille_totale, sizeof(float));
+    float D[7][14]={0};
     //Vecteur de probabilités
     float * P = malloc(nb_actions * sizeof(float));
 
@@ -73,7 +79,10 @@ void algo_REINFORCE(float gamma, int N, float alpha, float ecart_type, int nb_ce
         
         for (int u = 0; u < T; u++){
             int t = T - 1 - u;
-            float s = traj->liste[t].s; 
+            float s[14];
+            for(int i=0; i<14; i++){
+                s[i]=traj->liste[t].s[i];
+            } 
             int action = traj->liste[t].a;  
             float reward = traj->liste[t].r; 
 
@@ -81,27 +90,28 @@ void algo_REINFORCE(float gamma, int N, float alpha, float ecart_type, int nb_ce
             float GG = puissance(gamma,t) * G;
 
             calculer_probabilites(s,theta,nb_centres,nb_actions,ecart_type,P, min_centre, max_centre);
+            float val[14];
             for (int a = 0; a<nb_actions; a++){
                 for (int k = 0; k<nb_centres; k++){
                     float centre = min_centre + k * (max_centre - min_centre) / (nb_centres -1);
-                    float phi_t_k = phi(s,centre,ecart_type);
+                    phi(s,centre,ecart_type, val);
                     float modif_a_k = 0.0;
 
                     if (a == action){
-                        modif_a_k = phi_t_k;
+                        modif_a_k = val[k];
                     }
-                    modif_a_k -= P[a] * phi_t_k;
+                    modif_a_k -= P[a] * val[k];
                     //Tableau 2D vu en 1D
-                    D[a * nb_centres + k] += GG * modif_a_k;
+                    D[a][k] += GG * modif_a_k;
             }
         }
     }
+
     for (int a = 0; a<nb_actions; a++){
         for (int k = 0; k <nb_centres; k++){
-            theta[a][k]= alpha * (1.0/N) * D[a * nb_centres + k]; //2D => 1D
+            theta[a][k]+= alpha * (1.0/N) * D[a][k];
         }
     }
     }
-    free(D);
     free(P);
 }

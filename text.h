@@ -3,7 +3,7 @@
 
 #include "structure.h"
 
-maillon_traj_t creer_maillon(float a, float s, float r);
+maillon_traj_t creer_maillon(int a, float s[14], float r);
 
 void save_traj(FILE *file,traj_t traj);
 

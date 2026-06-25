@@ -10,11 +10,13 @@
 
 
 
-maillon_traj_t creer_maillon(float a, float s, float r)
+maillon_traj_t creer_maillon(int a, float s[14], float r)
 {
     maillon_traj_t mail;
     mail.a = a;
-    mail.s = s;
+    for (int i=0; i<14; i++){
+        mail.s[i] = s[i];
+    }
     mail.r = r;
     return mail;
 }
@@ -28,9 +30,12 @@ void save_traj(FILE *file, traj_t traj)
 
     for (int i = 0; i < traj.taille; i++)
     {
-        fprintf(file, "(%.6f %.6f %.6f)\n",
+        fprintf(file, "([");
+        for(int j=0;j<14;j++){
+            fprintf(file,"%.6f ",traj.liste[i].s[j]);
+        }
+        fprintf(file, "] %d %.6f)\n",
                 traj.liste[i].a,
-                traj.liste[i].s,
                 traj.liste[i].r);
     }
 
@@ -53,12 +58,14 @@ traj_t load_traj(FILE *file)
 
     for (int i = 0; i < traj.taille; i++)
     {
-        float a, s, r;
-        fscanf(file, "(%f %f %f)", &a, &s, &r);
-        traj.liste[i] = creer_maillon(a, s, r);
+        fscanf(file, "([");
+        for(int j=0;j<14;j++){
+            fscanf(file,"%.6f ",&traj.liste[i].s[j]);
+        }
+        fscanf(file, "] %d %.6f)\n",
+                &traj.liste[i].a,
+                &traj.liste[i].r);
     }
-
-    fscanf(file, " }");
     return traj;
 }
 

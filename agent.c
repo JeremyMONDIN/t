@@ -86,12 +86,12 @@ float somme_tab(
             tab[k][13] * d_proie;
 }
 
-reponse_t reaction_entite(perception_t per,float tab[7][14])
+reponse_t situation_entite(perception_t per,float tab[7][14], float s[14])
 {
     int perception_discrete = 1;
 
 
-    float T[7] = {0, 0, 0, 0, 0, 0}; // Intérêt de base
+    //float *T = malloc(7 * sizeof(float)); // Intérêt de base
     // t={explorer, manger, defendre, attaquer, chaser, reproduiction, fuir, repos}
     int faim = per.perso->faim ;
     if(perception_discrete) faim /= 33;
@@ -141,7 +141,22 @@ reponse_t reaction_entite(perception_t per,float tab[7][14])
         if (perception_discrete) d_allie = floor(4 * dist(per.perso->pos, per.allie->pos) / per.perso->caract.vision);
         else d_allie = 1/(1 + dist(per.perso->pos, per.allie->pos));
     }
-    
+
+    s[0] = 1;
+    s[1] = vie;
+    s[2] =energie;
+    s[3] = faim;
+    s[4] = nb_nourriture;
+    s[5] = nb_allie;
+    s[6] = nb_ennemi;
+    s[7] = nb_proie;
+    s[8] = d_nourriture;
+    s[9] = d_allie;
+    s[10] = d_ennemi;
+    s[11] = d_proie;
+    s[12] = rapport_force;
+    s[13] = rapport_vitesse;
+    /*
     int x=per.perso->pos.x+rand()%100-50;
     int y=per.perso->pos.y+rand()%100-50;
 
@@ -164,7 +179,7 @@ reponse_t reaction_entite(perception_t per,float tab[7][14])
 
     //printf("T = %f %f %f %f %f %f %f\n",T[0],T[1],T[2],T[3],T[4],T[5],T[6]);
 
-    /*Fonction pour transformer des intérêts en probabilité*/
+    //Fonction pour transformer des intérêts en probabilité
     float *T2 = malloc(7 * sizeof(float));
     float compt = 0;
     for (int i = 0; i < 7; i++)
@@ -187,13 +202,17 @@ reponse_t reaction_entite(perception_t per,float tab[7][14])
         compt -= T2[4];
         T2[4]=0;
     }
-
+production
+    T[4] = somme_tab( tab, 4, vie, energie, faim, nb_nourriture, nb_allie, nb_ennemi, nb_proie, d_nourriture, d_allie, d_ennemi, d_proie, rapport_force, rapport_vitesse);
+    // fuite
+    T[5] = somme_tab( tab, 5, vie, energie, faim, nb_nourriture, nb_allie, nb_ennemi, nb_proie, d_nourriture, d_allie, d_ennemi, d_proie, rapport_force, rapport_vitesse);
+    // r
     for (int j = 0; j < 7; j++)
     {
         T2[j] = T2[j] / compt;
     }
 
-    /*Fonction afin de determiner l'action à faire*/
+    //Fonction afin de determiner l'action à faire
     float alpha=(float)rand()/(float)RAND_MAX;
     int s=6;
     float cumul=0;
@@ -204,23 +223,32 @@ reponse_t reaction_entite(perception_t per,float tab[7][14])
             break;
         }
     }
+    printf("alpha %f s %d tab %f %f %f %f %f %f %f \n",alpha,s,T2[0],T2[1],T2[2],T2[3],T2[4],T2[5],T2[6]);
+    free(T);
     free(T2);
-    //printf("alpha %f s %d tab %f %f %f %f %f %f %f \n",alpha,s,T2[0],T2[1],T2[2],T2[3],T2[4],T2[5],T2[6]);
+
     //if(per.perso->espece->alim == 1) printf("%p reac nb_proie %d %p,nb_ennemie %d %p\n",per.perso,per.nb_proie,per.proie,per.nb_ennemi,per.ennemi);
-    return action(s,x,y,per.nouriture,per.allie,per.ennemi,per.proie);
+    return action(s,x,y,per.nouriture,per.allie,per.ennemi,per.proie);*/
 }
 
 
 
 reponse_t reaction(perception_t p)
 {
-    float s = p.perso->etat.id;
-
+    float s[14] = {0};
     // Choisir l'action selon le type d'espèce et ses paramètres theta
-    int action_id = choisir_action_espece(s, p.perso->espece, 7, 5);
 
-    int x = p.perso->pos.x + rand()%100 - 50;
-    int y = p.perso->pos.y + rand()%100 - 50;
+    situation_entite(p,p.perso->espece->theta,s);
+    //printf("tab %f %f %f %f %f %f %f %f %f %f %f %f %f %f\n",s[0],s[1],s[2],s[3],s[4],s[5],s[6],s[7],s[8],s[9],s[10],s[11],s[11],s[12],s[13]);
+    int action_id = choisir_action_espece(s, p.perso->espece, 7, 14);
+    p.perso->trajectoire.liste[p.perso->trajectoire.taille].a=action_id;
+    for (int i=0; i<14; i++){
+        p.perso->trajectoire.liste[p.perso->trajectoire.taille].s[i]=s[i];
+    }
+    p.perso->trajectoire.taille+=1;
+
+    int x = p.perso->pos.x + nb_aleatoire()%100 - 50;
+    int y = p.perso->pos.y + nb_aleatoire()%100 - 50;
 
     return action(action_id, x, y,
                   p.nouriture,

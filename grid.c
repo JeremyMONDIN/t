@@ -17,7 +17,7 @@ pnj_t* create_pnj(espece_t* espece, int energie,caract_t stat, SDL_Rect pos, int
     new_pnj->vie = vie;
     new_pnj->faim = faim;
     new_pnj->etat=base;
-    new_pnj->lock_repro=10;
+    new_pnj->lock_repro=1;
     new_pnj->lock_anim=0;
     new_pnj->trajectoire=init_traj();
     return new_pnj;

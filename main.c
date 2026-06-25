@@ -5,6 +5,9 @@
 #include <SDL2/SDL_ttf.h>
 #include <time.h>
 #include <string.h>
+#include <pthread.h>
+
+#include "thread_travail.h"
 #include "Mj.h"
 #include "agent.h"
 #include "moteur_rendu.h"
@@ -178,14 +181,14 @@ int main()
     int width = 1000,
         height = 700;
 
-    int nb_pnj[4] = {20, 0, 20, 30},
+    int nb_pnj[4] = {50, 0, 50, 50},
         nb_decor[3] = {50, 10, 0};
 
     
     // Vitesse, Force, Vision
     caract_t stat_panda = {5, 40, 20};
     caract_t stat_pinguin = {100, 100, 100};
-    caract_t stat_lapin = {15, 1, 50};
+    caract_t stat_lapin = {15, 5, 50};
     caract_t stat_snake = {20, 20, 50};
 
     //{base, vie, energie, faim, nb_nourriture, nb_allie, nb_ennemi, nb_proie, d_nourriture, d_allie, d_ennemi, d_proie, rapport_force, rapport_vitesse}
@@ -357,31 +360,41 @@ int main()
         fprintf(log, "boucle %d ***************************** %d\n", i, compte);
         if (print_texte && temp_on)
             printf("boucle %d ***************************** %d\n", i, compte);
-        if (i % 200 == 0)
+        if (i % 30 == 0)
         {
+            //Initialisation des tableaux de threads 
+            pthread_t threads[3];
+            thread_val_t val_threads[3];
             // Entraîner CHAQUE espèce avec SES PROPRES trajectoires
-            for (int e = 0; e < 3; e++)
+            for (int e = 0; e < 4; e++)
             {
                 // Collecter les trajectoires de cette espèce uniquement
                 int N_espece = 0;
                 for (int j = 0; j < pnj_l->nb_pnj; j++)
                 {
-                    if (pnj_l->list[j]->espece->alim == e)
+                    if (!strcmp(pnj_l->list[j]->espece->nom, tab_espece[e].nom))
                         N_espece++;
                 }
 
                 if (N_espece > 0)
                 {
-                    traj_t **traj_espece = malloc(N_espece * sizeof(traj_t *));
-                    int *tailles = malloc(N_espece * sizeof(int));
+                    val_threads[e].trajectoires = malloc(N_espece * sizeof(traj_t *));
+                    val_threads[e].tailles_traj = malloc(N_espece * sizeof(int));
+                    val_threads[e].N= N_espece;
+                    val_threads[e].id_espece= e;
+                    val_threads[e].gamma = 0.99;
+                    val_threads[e].alpha = 0.01;
+                    val_threads[e].ecart_type = 0.2;
+                    val_threads[e].nb_actions = 7;
 
+                    memcpy(val_threads[e].theta_res, tab_espece[e].theta, 7 * 14 * sizeof(float));
                     int k = 0;
                     for (int j = 0; j < pnj_l->nb_pnj; j++)
                     {
-                        if (pnj_l->list[j]->espece->alim == e)
+                        if (!strcmp(pnj_l->list[j]->espece->nom, tab_espece[e].nom))
                         {
-                            traj_espece[k] = &pnj_l->list[j]->trajectoire;
-                            tailles[k] = pnj_l->list[j]->trajectoire.taille;
+                            val_threads[e].trajectoires[k] = &pnj_l->list[j]->trajectoire;
+                            val_threads[e].tailles_traj[k] = pnj_l->list[j]->trajectoire.taille;
                             k++;
                         }
                     }
@@ -403,12 +416,24 @@ int main()
                         }
                     }
 
-                    // Entraîner avec theta de CETTE espèce
-                    algo_REINFORCE(0.99, N_espece, 0.01, 0.2, 5, 7,
-                                   traj_espece, tab_espece[e].theta, tailles, mini, maxi);
+                    val_threads[e].min_centre = mini;
+                    val_threads[e].max_centre = maxi;
 
-                    free(traj_espece);
-                    free(tailles);
+                    pthread_create(&threads[e], NULL, travail_thread, &val_threads[e]);
+                    
+                } else {
+                    threads[e] = 0;
+                }
+            }
+            for (int e = 0; e < 3; e++) {
+                if (threads[e] != 0) {
+                    pthread_join(threads[e], NULL);
+                    
+                    //Copie theta
+                    memcpy(tab_espece[e].theta, val_threads[e].theta_res, 7 * 14 * sizeof(float));
+                    
+                    free(val_threads[e].trajectoires);
+                    free(val_threads[e].tailles_traj);
                 }
             }
         }
@@ -430,7 +455,7 @@ int main()
             SDL_Delay(100);
         }
 
-        if (i % 1000 == 0)
+        if (i % 5 == 0)
         {
             compte = 0;
             for (int j = 0; j < monde_decor->nb_case_x; j++)

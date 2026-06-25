@@ -85,31 +85,26 @@ pnj_t *breed(pnj_t *mere, pnj_t *pere, int affichage_graphique)
     {
         if (mere->energie > cout_reproduction && pere->energie > cout_reproduction && mere->lock_repro == 0 && pere->lock_repro == 0)
         {
-            pnj_t *enfant = malloc(sizeof(pnj_t));
-            enfant->espece = mere->espece;
-            enfant->caract.vitesse = (mere->caract.vitesse + pere->caract.vitesse) / 2;
+            caract_t stat={0};
+            stat.vitesse = (mere->caract.vitesse + pere->caract.vitesse) / 2;
             if (evolution)
-                enfant->caract.vitesse += nb_aleatoire(seed) % 5 - 2;
-            enfant->caract.force = (mere->caract.force + pere->caract.force) / 2;
+                stat.vitesse += nb_aleatoire(seed) % 5 - 2;
+            stat.force = (mere->caract.force + pere->caract.force) / 2;
             if (evolution)
-                enfant->caract.force += nb_aleatoire(seed) % 5 - 2;
-            enfant->caract.vision = (mere->caract.vision + pere->caract.vision) / 2;
+                stat.force += nb_aleatoire(seed) % 5 - 2;
+            stat.vision = (mere->caract.vision + pere->caract.vision) / 2;
             if (evolution)
-                enfant->caract.vision += nb_aleatoire(seed) % 5 - 2;
-            enfant->pos.x = (mere->pos.x + pere->pos.x) / 2;
-            enfant->pos.y = (mere->pos.y + pere->pos.y) / 2;
-            enfant->pos.w = mere->pos.w;
-            enfant->pos.h = mere->pos.h;
-            enfant->vie = 50;
-            enfant->energie = 0;
-            enfant->faim = 50;
+                stat.vision += nb_aleatoire(seed) % 5 - 2;
+            SDL_Rect pos = {(mere->pos.x + pere->pos.x) / 2,
+                            (mere->pos.y + pere->pos.y) / 2, 30,30};
+            pnj_t * enfant=create_pnj(mere->espece, 0, stat, pos, 50,50);
             mere->energie -= cout_reproduction;
             pere->energie -= cout_reproduction;
             mere->etat.step = 0;
             pere->etat.step = 0;
-            pere->lock_repro = 200;
-            mere->lock_repro = 200;
-            enfant->lock_repro = 300;
+            pere->lock_repro = 5;
+            mere->lock_repro = 5;
+            enfant->lock_repro = 10;
             if (affichage_graphique)
             {
                 mere->lock_anim = 20;

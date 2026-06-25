@@ -47,7 +47,7 @@ float somme_tab(
  * @param tab tableau des coeficient action/perception
  * @return  L'action que l'agent souhaite réaliser
  */
-reponse_t reaction_entite(perception_t per,float tab[7][14]);
+reponse_t situation_entite(perception_t per,float tab[7][14], float s[14]);
 
 /**
  * @brief quelle fonction lancer selon l'alimentation de l'individus

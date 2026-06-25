@@ -26,7 +26,7 @@ float sigma(float * probas, int nb_etats);
  * @param ecart_type l'écart type sigma
  * @return le phi
  */
-float phi(float s, float centre, float ecart_type);
+void phi(float s[14], float centre, float ecart_type, float p[14]);
 
 /**
  * @brief Permet de calculer le vecteur des probabilités P
@@ -37,7 +37,7 @@ float phi(float s, float centre, float ecart_type);
  * @param ecart_type l'écart type (sigma)
  * @param P le tableau des probabilités
  */
-void calculer_probabilites(float s, float theta[7][14], int nb_centres, int nb_actions,
+void calculer_probabilites(float s[14], float theta[7][14], int nb_centres, int nb_actions,
                            float ecart_type, float * P, int min_centre, int max_centre);
 /** 
  * @brief permet l'apprentissage par renforcement

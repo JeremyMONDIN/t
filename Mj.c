@@ -259,23 +259,31 @@ void etape_suivante(pnj_list_t *pnj_l,
     {
         if (pnj_l->list[i]->etat.step <= 0 && pnj_l->list[i]->lock_anim == 0)
         {
-            reponse_t rep = get_action(pnj_l->list[i], monde_pnj, monde_decor);
             pnj_t *p = pnj_l->list[i];
+            if (p->trajectoire.taille >= p->trajectoire.capa) {
+                p->trajectoire.taille=0;
+            }       
+            float s[14];
+            reponse_t rep = get_action(p, monde_pnj, monde_decor);
+            
 
             // état simple
-            float s = pnj_l->list[i]->etat.id;
-
+            
             float recomp = 0;
 
             if (p->espece->alim==0){
                 switch (p->etat.id)
                 {
+                case 0:
+                    recomp=-50;
+                    break;
+
                 case 1:
                     recomp=20;
                     break;
 
                 case 2:
-                    recomp=10;
+                    recomp=30;
                     break;
 
                 case 3:
@@ -295,23 +303,30 @@ void etape_suivante(pnj_list_t *pnj_l,
                     break;
                 
                 case 7:
-                    recomp=0;
+                    recomp=5;
                     break;
 
                 default:
                     break;
+                }
+                if (p->vie<50){
+                    recomp-=15;
                 }
             }
 
             if (p->espece->alim==1){
                 switch (p->etat.id)
                 {
+                case 0:
+                    recomp=-50;
+                    break;
+
                 case 1:
                     recomp=15;
                     break;
 
                 case 2:
-                    recomp=10;
+                    recomp=30;
                     break;
 
                 case 3:
@@ -331,23 +346,30 @@ void etape_suivante(pnj_list_t *pnj_l,
                     break;
                 
                 case 7:
-                    recomp=0;
+                    recomp=5;
                     break;
 
                 default:
                     break;
+                }
+                if (p->vie<50){
+                    recomp-=15;
                 }
             }
 
             if (p->espece->alim==2){
                 switch (p->etat.id)
                 {
+                case 0:
+                    recomp=-50;
+                    break;
+                
                 case 1:
                     recomp=15;
                     break;
 
                 case 2:
-                    recomp=10;
+                    recomp=30;
                     break;
 
                 case 3:
@@ -367,31 +389,20 @@ void etape_suivante(pnj_list_t *pnj_l,
                     break;
                 
                 case 7:
-                    recomp=0;
+                    recomp=5;
                     break;
 
                 default:
                     break;
                 }
+                if (p->vie<50){
+                    recomp-=15;
+                }
             }
 
-            // ajout trajectoire
 
-            if (p->trajectoire.taille >= p->trajectoire.capa) {
-                p->trajectoire.capa *= 2;
-                p->trajectoire.liste = realloc(
-                                                p->trajectoire.liste,
-                                                p->trajectoire.capa * sizeof(maillon_traj_t)
-                                                );
-            }       
+            p->trajectoire.liste[pnj_l->list[i]->trajectoire.taille-1].r = recomp;
 
-            int t = p->trajectoire.taille;
-
-            p->trajectoire.liste[t].s = s;
-            p->trajectoire.liste[t].a = rep.act;
-            p->trajectoire.liste[t].r = recomp;
-
-            p->trajectoire.taille++;
 
 
             pnj_l->list[i]->etat.id = rep.act;
