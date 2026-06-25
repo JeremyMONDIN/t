@@ -3,10 +3,6 @@
 
 #include <SDL2/SDL.h>
 
-extern int print_var;
-extern int print_texte;
-extern int affichage_graphique;
-
 #define max(a,b) ((a)>(b)?(a):(b))
 #define min(a,b) ((a)<(b)?(a):(b))
 #define wrap(v,max) (((v)%(max)+(max))%(max))
@@ -30,7 +26,7 @@ typedef struct espece{
     int alim;
     SDL_Texture * visuel;
     caract_t caract;
-    float * theta;
+    float theta[7][14];
     int trained;
 } espece_t;
 
@@ -41,9 +37,10 @@ typedef struct maillon_traj{
 } maillon_traj_t;
 
 typedef struct traj{
-    int recomp_totale;
+    float recomp_totale;
     int taille;
-    maillon_traj_t ** liste;
+    int capa;
+    maillon_traj_t * liste;
 } traj_t;
 
 typedef struct pnj{

@@ -3,7 +3,6 @@
 
 #include "structure.h"
 
-
 /**
  * @brief permet de calculer la valeur d'une puissance
  * @param val la valeur d'entrée qui subit la puissance
@@ -38,8 +37,8 @@ float phi(float s, float centre, float ecart_type);
  * @param ecart_type l'écart type (sigma)
  * @param P le tableau des probabilités
  */
-void calculer_probabilites(float s, float * theta, int nb_centres, int nb_actions,
-                           float ecart_type, float * P);
+void calculer_probabilites(float s, float theta[7][14], int nb_centres, int nb_actions,
+                           float ecart_type, float * P, int min_centre, int max_centre);
 /** 
  * @brief permet l'apprentissage par renforcement
  * @param gamma Facteur d'actualisation (permet de converger vers une unique valeur)
@@ -53,6 +52,7 @@ void calculer_probabilites(float s, float * theta, int nb_centres, int nb_action
  * @param tailles_traj tableau de la longueur des trajectoires
 */
 void algo_REINFORCE(float gamma, int N, float alpha, float ecart_type, int nb_centres, int nb_actions,
-                    traj_t ** trajectoires, float * theta, int * tailles_traj);
+                    traj_t ** trajectoires, float theta[7][14], int * tailles_traj, int min_centre,
+                    int max_centre);
     
 #endif

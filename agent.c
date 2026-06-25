@@ -1,14 +1,14 @@
 #include "structure.h"
 #include "liste.h"
 #include "agent.h"
-#include <math.h>
 #include "rl.h"
+#include "reinforce.h"
+#include <math.h>
 
 
 
 reponse_t action(int s, int x, int y, decor_t* nourriture, pnj_t* allie, pnj_t* ennemi, pnj_t* proie){
-    /*Fonction afin de determiner l'action à faire*/
-    if (print_var) printf("action\n");
+
     reponse_t rep={0,-1,-1,NULL};
     switch (s)
     {
@@ -51,42 +51,9 @@ float dist(SDL_Rect a, SDL_Rect b)
     return sqrt((a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y));
 }
 
-//{base, vie, energie, faim, nb_nourriture, nb_allie, nb_ennemi, nb_proie, d_nourriture, d_allie, d_ennemi, d_proie, rapport_force, rapport_vitesse}
-
-float coef_proie[7][14]={
-/* explorer    */ { 4,  1,  1, -1, -1,  1, -3, -2,  1, -3,  0,  0,  0,  0},
-/* manger      */ {-3, -1, -2,  5,  3,  0, -4,  5,  0, -4,  0,  0,  0,  0},
-/* defendre    */ {-4, -2, -1,  0,  0,  1,  4,  0,  1,  4,  4,  3,  0,  0},
-                    //{-1000,0,0,0,0,0,0,0,0,0,0,0,0,0},
-/* attaquer    */ {-1000,0,0,0,0,0,0,0,0,0,0,0,0,0},
-/* reproduire  */ {-2,  3,  3, -3,  0,  4, -2,  0,  3, -2,  0,  0,  0,  0},
-/* fuir        */ {-4, -2, -1,  0,  0, -1,  6,  0,  0,  6, -5, -4,  0,  0},
-/* repos       */ { 0, -3, -5, -2,  0,  0, -1,  0,  0,  0,  0,  0,  0,  0}
-};
 
 
-float coef_carn[7][14]={
-/* explorer    */ { 3,  1,  1, -1, -1,  0, -1, -2,  0, -1,  0,  0,  1, -1},
-/* manger      */ {5, -1, -2,  5,  0,  0, -2,  0,  0, -2,  0,  0,  4,  5},
-/* defendre    */ {-3, -2, -1,  0,  0,  1,  3,  0,  1,  3,  4,  3,  0,  0},
-/* attaquer    */ { 12,  1,  1,  2,  0, -1, -2,  0,  0, -2,  4,  3,  5,  5},
-/* reproduire  */ {-2,  3,  3, -3,  0,  3, -2,  0,  3, -2,  0,  0,  0,  0},
-/* fuir        */ {-3, -2, -1,  0,  0, -1,  5,  0,  0,  5, -5, -4,  0,  0},
-/* repos       */ { 0, -3, -5, -2,  0,  0, -1,  0,  0,  0,  0,  0,  0,  0}
-};
-
-
-float coef_omni[7][14]={
-/* explorer    */ { 3,  1,  1, -1, -1,  1, -2, -2,  1, -2,  0,  0,  1, -1},
-/* manger      */ {-2, -1, -2,  5,  2,  0, -3,  4,  0, -3,  0,  0,  2,  3},
-/* defendre    */ {-3, -2, -1,  0,  0,  1,  3,  0,  1,  3,  4,  3,  0,  0},
-/* attaquer    */ { 0,  1,  1,  1,  0, -1, -2,  0,  0, -2,  3,  2,  4,  4},
-/* reproduire  */ {-2,  3,  3, -3,  0,  4, -2,  0,  3, -2,  0,  0,  0,  0},
-/* fuir        */ {-3, -2, -1,  0,  0, -1,  5,  0,  0,  5, -5, -4,  0,  0},
-/* repos       */ { 0, -3, -5, -2,  0,  0, -1,  0,  0,  0,  0,  0,  0,  0}
-};
-
-static float somme_tab(
+float somme_tab(
     float tab[7][14],
     int k,
     int vie,
@@ -121,8 +88,9 @@ static float somme_tab(
 
 reponse_t reaction_entite(perception_t per,float tab[7][14])
 {
-    if (print_var)
-        printf("reaction_entite\n");
+    int perception_discrete = 1;
+
+
     float T[7] = {0, 0, 0, 0, 0, 0}; // Intérêt de base
     // t={explorer, manger, defendre, attaquer, chaser, reproduiction, fuir, repos}
     int faim = per.perso->faim ;
@@ -244,23 +212,9 @@ reponse_t reaction_entite(perception_t per,float tab[7][14])
 
 
 
-float construire_etat(perception_t p)
-{
-    float s = 0;
-
-    s += 0.3 * (float)p.nb_nouriture / 5.0;
-    s += 0.5 * (float)p.nb_ennemi / 5.0;
-    s += 0.2 * (float)p.nb_allie / 5.0;
-
-    if (s < 0) s = 0;
-    if (s > 1) s = 1;
-
-    return s;
-}
-
 reponse_t reaction(perception_t p)
 {
-    float s = construire_etat(p);
+    float s = p.perso->etat.id;
 
     // Choisir l'action selon le type d'espèce et ses paramètres theta
     int action_id = choisir_action_espece(s, p.perso->espece, 7, 5);

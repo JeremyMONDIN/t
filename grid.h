@@ -58,21 +58,23 @@ pnj_t* create_pnj( espece_t* espece, int energie,caract_t stat, SDL_Rect pos, in
  * @param monde_pnj le monde dans lequel se trouve le PNJ
  * @param perso le PNJ à supprimer
  */
-void kill_pnj(pnj_grid_t* monde_pnj, pnj_t * perso);
+void kill_pnj(pnj_grid_t* monde_pnj, pnj_t * perso, SDL_Rect taille_monde);
 
 /**
  * @brief Place un PNJ à sa place dans la grille
  * @param grid La grille dans laquelle on place le PNJ
  * @param pnj le pnj à poser dans la grille
  */
-void place_pnj_in_grid(pnj_grid_t* grid, pnj_t *pnj);
+void place_pnj_in_grid(pnj_grid_t* grid, pnj_t *pnj, SDL_Rect taille_monde);
 
 /**
  * @brief Supprime un PNJ de la grille (mais il ne free pas !)
  * @param grid La grille dans laquelle se trouve le PNJ à supprimer
  * @param pnj le pnj à supprimer dans la grille
  */
-int sup_pnj_from_grid(pnj_grid_t* grid, pnj_t *pnj);
+int sup_pnj_from_grid(pnj_grid_t* grid, pnj_t *pnj, SDL_Rect taille_monde);
+
+pnj_t * get_pnj(pnj_grid_t* grid, int x, int y,int w, SDL_Rect taille_monde);
 
 /**
  * @brief Donne la liste des PNJ dans une zone donnée
@@ -80,17 +82,9 @@ int sup_pnj_from_grid(pnj_grid_t* grid, pnj_t *pnj);
  * @param area La zone dans la laquelle on recherche 
  * @return Une liste des pnj présents dans la zone
  */
-pnj_list_t * get_pnj_list_in(pnj_grid_t* grid, SDL_Rect area);
+pnj_list_t * get_pnj_list_in(pnj_grid_t* grid, SDL_Rect area, SDL_Rect taille_monde);
 
-/**
- * @brief Donne la liste des PNJ dans un rayon donné
- * @param grid la grille contenant les PNJ
- * @param x la coordonnée horizontale du centre de recherche
- * @param y la coordonnée verticale du centre de recherche
- * @param radius le rayon de recherche
- * @return Une liste des pnjs présents dans le rayon donné
- */
-pnj_list_t * get_pnj_list_in_radius(pnj_grid_t* grid, int x, int y, int radius);
+
 
 
 /**
@@ -108,21 +102,21 @@ decor_t* create_decor(int id, SDL_Texture * visuel, int id_etat,int rang, SDL_Re
  * @param monde_decor Le monde contenant les décors
  * @param cible Le decor que l'on supprime
  */
-void kill_decor(decor_grid_t* monde_decor, decor_t ** cible);
+void kill_decor(decor_grid_t* monde_decor, decor_t ** cible, SDL_Rect taille_monde);
 
 /**
  * @brief Place un décor dans grid
  * @param grid la grille dans laquelle on place le décor
  * @param decor le décor que l'on souhaite poser
  */
-void place_decor_in_grid(decor_grid_t* grid, decor_t *decor);
+void place_decor_in_grid(decor_grid_t* grid, decor_t *decor, SDL_Rect taille_monde);
 
 /**
  * @brief Supprime un décor de grid (mais ne libère pas !)
  * @param grid La grille dans laquelle se trouve le decor
  * @param decor le décor à retirer
  */
-void sup_decor_from_grid(decor_grid_t* grid, decor_t *decor);
+void sup_decor_from_grid(decor_grid_t* grid, decor_t *decor, SDL_Rect taille_monde);
 
 /**
  * @brief Donne la liste des décors dans la zone
@@ -130,15 +124,7 @@ void sup_decor_from_grid(decor_grid_t* grid, decor_t *decor);
  * @param area la zone dans laquelle on recherche les decors
  * @return la liste des decors dans la zone recherchée
  */
-decor_list_t * get_decor_list_in(decor_grid_t* grid, SDL_Rect area);
-/**
- * @brief Donne la liste des décors dans un rayon donné
- * @param grid la grille dans laquelle on recherche
- * @param x la position horizontale du centre du cercle
- * @param y la position verticale du centre du cercle
- * @param radius le rayon dans lequel on recherche
- * @return une liste des décors dans le rayon recherché
- */
-decor_list_t * get_decor_list_in_radius(decor_grid_t* grid, int x, int y, int radius);
+decor_list_t * get_decor_list_in(decor_grid_t* grid, SDL_Rect area, SDL_Rect taille_monde);
+
 
 #endif 

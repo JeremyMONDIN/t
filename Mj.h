@@ -4,32 +4,20 @@
 #include <SDL2/SDL.h>
 #include "structure.h"
 
-extern pnj_grid_t *monde_pnj;
-extern decor_grid_t *monde_decor;
 
-extern pnj_list_t * pnj_l;
-extern decor_list_t * decor_l;
-
-extern SDL_Rect taille_monde ;
-
-extern int duree_action ;
-extern float coef_ennemi_proie ;
-
-extern int force_base ;
-extern int perte_faim ;
-extern int degat_faim ;
-
-extern SDL_Texture* texture_death;
 
 /**
  * @brief crée les variables globales monde_pnj et monde_decor 
  */
-void init_monde();
+void init_monde(pnj_grid_t **monde_pnj,
+                decor_grid_t **monde_decor,
+                SDL_Rect taille_monde);
 
 /**
  * @brief libere les variables globales monde_pnj et monde_decor et leur contenue
  */
-void free_monde();
+void free_monde(pnj_grid_t *monde_pnj,
+                decor_grid_t *monde_decor);
 
 
 //**************Mj****************/
@@ -37,127 +25,144 @@ void free_monde();
 /**
  * @brief Crée une nouvelle espèce.
  *
- * Initialise une structure espèce avec son régime alimentaire,
- * sa texture d'affichage et ses caractéristiques de base.
+ * Initialise une espèce avec son régime alimentaire,
+ * son apparence graphique et ses caractéristiques de base.
  *
- * @param alim Type d'alimentation de l'espèce
- *             (herbivore, carnivore ou omnivore).
- * @param visu Texture utilisée pour représenter les individus
- *             de cette espèce.
+ * @param alim Type d'alimentation :
+ *             0 = herbivore,
+ *             1 = carnivore,
+ *             2 = omnivore.
+ * @param visu Texture SDL représentant l'espèce.
  * @param stat Caractéristiques initiales de l'espèce.
  *
  * @return Structure espèce initialisée.
  */
-espece_t create_espece(char nom[50], int alim, SDL_Texture *visu, caract_t stat);
+espece_t create_espece(char nom[50], int alim, SDL_Texture *visu, caract_t stat, float tab[7][14]);
 
 /**
- * @brief Ajoute un individu dans le monde.
+ * @brief Ajoute un nouvel individu dans le monde.
  *
- * Crée un nouveau PNJ appartenant à l'espèce indiquée et le place
- * à la position spécifiée.
+ * Crée un PNJ appartenant à l'espèce indiquée et
+ * l'insère dans la liste globale des agents.
  *
  * @param espece Espèce du nouvel individu.
- * @param pos Position et dimensions initiales du PNJ.
+ * @param pos Position initiale.
  */
-void add_pnj(espece_t* espece, SDL_Rect pos);
+void add_pnj(   espece_t *espece,
+                SDL_Rect pos,
+                pnj_grid_t *monde_pnj,
+                pnj_list_t *pnj_l,
+                SDL_Rect taille_monde);
 
 /**
- * @brief Ajoute un élément de décor dans le monde.
+ * @brief Ajoute un élément de décor.
  *
- * Crée un nouvel élément de décor (nourriture, cadavre, obstacle, etc.)
- * et l'insère dans la grille de décor.
+ * Utilisé pour créer des ressources, cadavres ou
+ * autres éléments interactifs de l'environnement.
  *
  * @param id Identifiant du type de décor.
- * @param visuel Texture utilisée pour l'affichage.
- * @param id_etat État associé au décor.
- * @param rang Priorité ou couche d'affichage du décor.
- * @param pos Position et dimensions du décor.
+ * @param visuel Texture SDL associée.
+ * @param id_etat État initial du décor.
+ * @param rang Priorité ou catégorie du décor.
+ * @param pos Position du décor.
  */
-void add_decor(int id, SDL_Texture * visuel, int id_etat, int rang, SDL_Rect pos);
+void add_decor(int id,
+               SDL_Texture *visuel,
+               int id_etat,
+               int rang,
+               SDL_Rect pos,
+               decor_grid_t *monde_decor,
+               decor_list_t *decor_l,
+                SDL_Rect taille_monde);
+
+
+int check_food(int a, int b);
 
 /**
- * @brief Génère la perception d'un individu.
+ * @brief Génère les perceptions d'un agent.
  *
- * Analyse l'environnement proche du PNJ afin de construire
- * l'ensemble des informations nécessaires à la prise de décision.
+ * Recherche dans le voisinage de l'agent les ressources,
+ * alliés, ennemis et proies visibles.
  *
- * Les informations peuvent inclure :
- * - nourriture visible ;
- * - alliés visibles ;
- * - ennemis visibles ;
- * - proies visibles ;
- * - distances associées ;
- * - rapports de force et de vitesse.
+ * @param monde_pnj Grille des agents.
+ * @param monde_decor Grille des décors.
+ * @param perso Agent observateur.
  *
- * @param monde_pnj Grille contenant les PNJ.
- * @param monde_decor Grille contenant les éléments de décor.
- * @param perso Individu dont la perception doit être calculée.
- *
- * @return Structure contenant les informations perçues.
+ * @return Ensemble des perceptions de l'agent.
  */
 perception_t donne_perception(
     pnj_grid_t* monde_pnj,
     decor_grid_t* monde_decor,
-    pnj_t * perso
+    pnj_t *perso
 );
 
 /**
- * @brief Détermine l'action à effectuer.
+ * @brief Détermine la prochaine action d'un agent.
  *
- * Utilise la perception de l'individu ainsi que son tableau
- * d'intérêt pour sélectionner une action.
+ * Utilise les perceptions et le modèle décisionnel
+ * pour choisir un état comportemental.
  *
- * Le choix est effectué de manière probabiliste à partir
- * des intérêts calculés pour chaque état comportemental.
+ * @param perso Agent concerné.
  *
- * @param perso Individu devant prendre une décision.
- *
- * @return Réponse contenant l'action choisie et ses paramètres.
+ * @return Action sélectionnée.
  */
-reponse_t get_action(pnj_t * perso);
+reponse_t get_action(pnj_t *perso,
+                     pnj_grid_t *monde_pnj,
+                     decor_grid_t *monde_decor);
 
 /**
- * @brief Exécute l'action courante d'un individu.
+ * @brief Exécute le comportement courant d'un agent.
  *
- * Met à jour l'état du PNJ en fonction de l'action sélectionnée :
- * déplacement, alimentation, attaque, reproduction, fuite,
- * exploration ou repos.
+ * Appelle la fonction correspondant à l'état actuel
+ * de l'agent (exploration, fuite, chasse, etc.).
  *
- * Cette fonction applique également les coûts énergétiques,
- * les dégâts éventuels et la progression de l'action en cours.
- *
- * @param perso Individu à mettre à jour.
+ * @param perso Agent à mettre à jour.
  */
-void agir(pnj_t * perso);
+void agir(pnj_t *perso,
+          pnj_grid_t *monde_pnj,
+          pnj_list_t *pnj_l,
+          decor_grid_t *monde_decor,
+          decor_list_t *decor_l,
+          SDL_Rect taille_monde,
+          SDL_Texture *texture_death,
+          int vitesse_base,
+          int vision_base,
+          int affichage_graphique);
 
 /**
- * @brief Fait avancer la simulation d'un tick.
+ * @brief Fait avancer la simulation d'un tour.
  *
- * Parcourt l'ensemble des individus présents dans le monde,
- * met à jour leurs perceptions, sélectionne leurs actions
- * lorsque nécessaire et exécute leur comportement.
- *
- * Cette fonction constitue la boucle principale du moteur
- * de simulation.
+ * Met à jour les perceptions, décisions et actions
+ * de tous les agents présents dans le monde.
  */
-void etape_suivante(pnj_list_t* pnj_l, decor_list_t* decor_l, int faim);
+void etape_suivante(pnj_list_t *pnj_l,
+                    decor_list_t *decor_l,
+                    int faim,
+                    pnj_grid_t *monde_pnj,
+                    decor_grid_t *monde_decor,
+                    SDL_Rect taille_monde,
+                    SDL_Texture *texture_death,
+                    int affichage_graphique,
+                    int print_texte,
+                    FILE *log);
 
 /**
- * @brief Affiche l'état courant du monde.
+ * @brief Affiche le monde.
  *
- * Dessine le fond, les éléments de décor et les PNJ
- * présents dans la simulation puis met à jour la fenêtre.
+ * Dessine le décor et les agents visibles.
  *
- * @param window Fenêtre SDL utilisée pour l'affichage.
- * @param renderer Renderer SDL utilisé pour le rendu.
+ * @param window Fenêtre SDL.
+ * @param renderer Renderer SDL.
  * @param background Texture de fond.
- * @param rect Zone d'affichage du fond.
+ * @param rect Zone observée.
  */
-void affichage(
-    SDL_Window *window,
-    SDL_Renderer *renderer,
-    SDL_Texture *background,
-    SDL_Rect rect
-);
+void affichage(SDL_Window *window,
+               SDL_Renderer *renderer,
+               SDL_Texture *background,
+               SDL_Rect user,
+               pnj_grid_t *monde_pnj,
+               decor_grid_t *monde_decor,
+               SDL_Rect taille_monde,
+                int temp_on);
 
 #endif

@@ -23,8 +23,12 @@ void dessiner_fenetre(SDL_Window * window, SDL_Renderer * renderer,
 * @param renderer le rendu de la fenêtre sur laquelle on dessine
 * @param entite le PNJ à montrer sur la fenêtre 
 */
-void afficher_PNJ(SDL_Window * window, SDL_Renderer * renderer,
-                  pnj_t * entite);
+void afficher_PNJ(  SDL_Window *window, 
+                    SDL_Renderer *renderer,
+                    pnj_t *entite, 
+                    SDL_Rect user,
+                    SDL_Rect taille_monde,
+                    int temp_on);
 
 /** 
 * @brief Affiche un décor en fonction de sa position actuelle
@@ -32,8 +36,11 @@ void afficher_PNJ(SDL_Window * window, SDL_Renderer * renderer,
 * @param renderer le rendu de la fenêtre sur laquelle on dessine
 * @param decor le décor à montrer sur la fenêtre
 */
-void afficher_decor(SDL_Window * window, SDL_Renderer * renderer,
-                  decor_t * decor);
+void afficher_decor(  SDL_Window *window, 
+                    SDL_Renderer *renderer,
+                    decor_t *entite, 
+                    SDL_Rect user,
+                    SDL_Rect taille_monde);
 
 void affiche_fond2(SDL_Window *window, SDL_Renderer *renderer,
                   SDL_Texture *texture, SDL_Rect rect);

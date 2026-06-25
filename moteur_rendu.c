@@ -6,14 +6,11 @@
 #include "moteur_rendu.h"
 #include "structure.h"
 
-
-//int print_var = 0;
-// permet de dessiner l'arrière plan de l'image
+// int print_var = 0;
+//  permet de dessiner l'arrière plan de l'image
 void dessiner_fenetre(SDL_Window *window, SDL_Renderer *renderer,
                       SDL_Texture *texture)
 {
-    if (print_var)
-        printf("dessiner fenetre\n");
 
     SDL_Rect source = {0},
              window_dimensions = {0},
@@ -27,40 +24,157 @@ void dessiner_fenetre(SDL_Window *window, SDL_Renderer *renderer,
     SDL_RenderCopy(renderer, texture, &source, &destination);
 }
 
-// affiche un PNJ
-void afficher_PNJ(SDL_Window *window, SDL_Renderer *renderer,
-                  pnj_t *entite)
+void animation(SDL_Renderer *renderer, pnj_t *entite, SDL_Rect dest,int temp_on)
 {
-    if (print_var)
-        printf("afficher_pnj\n");
-    SDL_Rect source = {0, 0, 0, 0},
-             position = entite->pos;
+    switch (entite->etat.id)
+    {
+    case 2: //manger
+        dest.x += (((decor_t*)entite->etat.para)->pos.x - entite->pos.x) /2;
+        dest.y += (((decor_t*)entite->etat.para)->pos.y - entite->pos.y) /2;
+        SDL_SetRenderDrawColor(renderer,0,0,255,255);
+        SDL_RenderFillRect(renderer,&dest);
+        if(temp_on) entite->lock_anim--;
+        break;
+    case 3: // attaque
+        dest.x += (((pnj_t*)entite->etat.para)->pos.x - entite->pos.x) /2;
+        dest.y += (((pnj_t*)entite->etat.para)->pos.y - entite->pos.y) /2;
+        SDL_SetRenderDrawColor(renderer,115,8,0,255);
+        SDL_RenderFillRect(renderer,&dest);
+        entite->lock_anim--;
+        if (entite->lock_anim == 0) ((pnj_t*)entite->etat.para)->lock_anim =0;
+        break;
+    case 4: //attaque
+        dest.x += (((pnj_t*)entite->etat.para)->pos.x - entite->pos.x) /2;
+        dest.y += (((pnj_t*)entite->etat.para)->pos.y - entite->pos.y) /2;
+        SDL_SetRenderDrawColor(renderer,115,8,0,255);
+        SDL_RenderFillRect(renderer,&dest);
+        if(temp_on) entite->lock_anim--;
+        if (entite->lock_anim == 0) ((pnj_t*)entite->etat.para)->lock_anim =0;
+        break;
+    case 5: //repro
+        dest.x += (((pnj_t*)entite->etat.para)->pos.x - entite->pos.x) /2;
+        dest.y += (((pnj_t*)entite->etat.para)->pos.y - entite->pos.y) /2;
+        SDL_SetRenderDrawColor(renderer,255,255,0,255);
+        SDL_RenderFillRect(renderer,&dest);
+        entite->lock_anim--;
+        if (entite->lock_anim == 0) ((pnj_t*)entite->etat.para)->lock_anim =0;
+        break;
+    case 7: // repos
+        SDL_SetRenderDrawColor(renderer,255,255,255,255);
+        SDL_RenderFillRect(renderer,&dest);
+        if(temp_on) entite->lock_anim--;
+        break;
+    }
+}
 
+// affiche un PNJ
+void afficher_PNJ(  SDL_Window *window, 
+                    SDL_Renderer *renderer,
+                    pnj_t *entite, 
+                    SDL_Rect user,
+                    SDL_Rect taille_monde,
+                    int temp_on)
+{
+    SDL_Rect source = {0},
+             dest = {0};
     SDL_QueryTexture(entite->espece->visuel, NULL, NULL, &source.w, &source.h);
 
-    SDL_RenderCopy(renderer, entite->espece->visuel, &source, &position);
+    int W = taille_monde.x;
+    int H = taille_monde.y;
+
+    int screen_w, screen_h;
+    SDL_GetWindowSize(window, &screen_w, &screen_h);
+
+    dest.w = 30;
+    dest.h = 30;
+
+    int k_x = user.x / W; // modulo
+    if (user.x < 0 && user.x % W != 0)
+        k_x--;
+
+    int k_y = user.y / H;
+    if (user.y < 0 && user.y % H != 0)
+        k_y--;
+
+    int nb_x = (user.x + screen_w) / W - k_x;
+    if (user.x + screen_w < 0 && (user.x + screen_w) % W != 0)
+        nb_x--;
+    int nb_y = (user.y + screen_h) / H - k_y;
+    if (user.y + screen_h < 0 && (user.y + screen_h) % H != 0)
+        nb_y--;
+
+    int base_x = entite->pos.x - user.x + k_x * W;
+    int base_y = entite->pos.y - user.y + k_y * H;
+
+    for (int i = -1; i < nb_x + 1; i++)
+    {
+        for (int j = -1; j < nb_y + 1; j++)
+        {
+            dest.x = base_x + i * W;
+            dest.y = base_y + j * H;
+            if (0 < dest.x + dest.w && dest.x < screen_w &&
+                0 < dest.y + dest.h && dest.y < screen_h)
+                SDL_RenderCopy(renderer, entite->espece->visuel, &source, &dest);
+            if (entite->lock_anim > 0)
+                animation(renderer, entite, dest, temp_on);
+        }
+    }
 }
 
 // affiche un decor
-void afficher_decor(SDL_Window *window, SDL_Renderer *renderer,
-                    decor_t *decor)
+void afficher_decor(  SDL_Window *window, 
+                    SDL_Renderer *renderer,
+                    decor_t *entite, 
+                    SDL_Rect user,
+                    SDL_Rect taille_monde)
 {
-    if (print_var)
-        printf("afficher_decor\n");
-    SDL_Rect source = {0, 0, 0, 0},
-             position = decor->pos;
+    SDL_Rect source = {0},
+             dest = {0};
+    SDL_QueryTexture(entite->visu, NULL, NULL, &source.w, &source.h);
 
-    SDL_QueryTexture(decor->visu, NULL, NULL, &source.w, &source.h);
+    int W = taille_monde.x;
+    int H = taille_monde.y;
 
-    SDL_RenderCopy(renderer, decor->visu, &source, &position);
-    return;
+    int screen_w, screen_h;
+    SDL_GetWindowSize(window, &screen_w, &screen_h);
+
+    dest.w = 30;
+    dest.h = 30;
+
+    int k_x = user.x / W; // modulo
+    if (user.x < 0 && user.x % W != 0)
+        k_x--;
+
+    int k_y = user.y / H;
+    if (user.y < 0 && user.y % H != 0)
+        k_y--;
+
+    int nb_x = (user.x + screen_w) / W - k_x;
+    if (user.x + screen_w < 0 && (user.x + screen_w) % W != 0)
+        nb_x--;
+    int nb_y = (user.y + screen_h) / H - k_y;
+    if (user.y + screen_h < 0 && (user.y + screen_h) % H != 0)
+        nb_y--;
+
+    int base_x = entite->pos.x - user.x + k_x * W;
+    int base_y = entite->pos.y - user.y + k_y * H;
+
+    for (int i = -1; i < nb_x + 1; i++)
+    {
+        for (int j = -1; j < nb_y + 1; j++)
+        {
+            dest.x = base_x + i * W;
+            dest.y = base_y + j * H;
+            if (0 < dest.x + dest.w && dest.x < screen_w &&
+                0 < dest.y + dest.h && dest.y < screen_h)
+                SDL_RenderCopy(renderer, entite->visu, &source, &dest);
+        }
+    }
 }
 
 // à partir de là c'est des fonctions de test
 void end_sdl(char ok, char const *msg, SDL_Window *window, SDL_Renderer *renderer)
 {
-    if (print_var)
-        printf("end_sdl\n");
     char msg_formated[255];
     int l;
 
@@ -113,7 +227,7 @@ SDL_Texture *load_texture_from_image(char *file_image_name, SDL_Window *window, 
 }
 
 void affiche_fond2(SDL_Window *window, SDL_Renderer *renderer,
-                  SDL_Texture *texture, SDL_Rect rect)
+                   SDL_Texture *texture, SDL_Rect rect)
 {
     SDL_Rect src;
     SDL_Rect dst;
@@ -121,7 +235,6 @@ void affiche_fond2(SDL_Window *window, SDL_Renderer *renderer,
 
     SDL_GetWindowSize(window, &win.w, &win.h);
     SDL_QueryTexture(texture, NULL, NULL, &src.w, &src.h);
-
 
     int offset_x = (rect.x % rect.w + rect.w) % rect.w;
     int offset_y = (rect.y % rect.h + rect.h) % rect.h;
@@ -143,23 +256,12 @@ void affiche_fond2(SDL_Window *window, SDL_Renderer *renderer,
     }
 }
 
-
-
-
-
-
-
-
-
-
-
-
 /*int mouse=1,
     duree=200;
 
 clock_t timer=0;
-    
-    
+
+
 SDL_Rect get_demande(SDL_Event event){
     if (print_var) printf("user_ask\n");
     SDL_Rect rect={0};
@@ -168,7 +270,7 @@ SDL_Rect get_demande(SDL_Event event){
             rect.h=4;                 // Il est temps d'arrêter le programme
             break;
 
-        case SDL_KEYDOWN:     
+        case SDL_KEYDOWN:
 
             switch (event.key.keysym.sym) {
                 case SDLK_KP_PLUS:
@@ -179,7 +281,7 @@ SDL_Rect get_demande(SDL_Event event){
                     rect.w+=-10;
                     rect.h=3;
                     break;
-                case SDLK_SPACE: 
+                case SDLK_SPACE:
                     //printf("on quitte\n");
                     rect.h=4;                 // Il est temps d'arrêter le programme
                     break;
@@ -191,7 +293,7 @@ SDL_Rect get_demande(SDL_Event event){
                     break;
             }
             break;
-        
+
         case SDL_MOUSEWHEEL:
             if (event.wheel.y>0){
                 rect.w=5;
@@ -202,7 +304,7 @@ SDL_Rect get_demande(SDL_Event event){
             rect.h=3;
             break;
 
-                    
+
         case SDL_MOUSEBUTTONDOWN:
             //printf("mouse_down %d\n",mouse);
             //printf("click\n");
@@ -244,7 +346,7 @@ void user_modif(SDL_Rect rect,SDL_Rect *user,int *prog_on,int *temp_on){
                 break;
             case 2:            //selection entity
                 printf("click\n");
-                
+
                 break;
             case 3:            //zoom
                 printf("zoom\n");
@@ -255,14 +357,14 @@ void user_modif(SDL_Rect rect,SDL_Rect *user,int *prog_on,int *temp_on){
             printf("quite\n");
                 *prog_on = 0;
                 break;
-            case 5:            
-                
+            case 5:
+
                 break;
             case 6:            //pause
             printf("pause\n");
                 *temp_on=!*temp_on;
                 break;
-            
+
             default:
                 break;
             }
@@ -383,7 +485,7 @@ int main(){
         SDL_RenderClear(renderer);
         affiche_fond2(window, renderer, background, user);
         //afficher_decor(window, renderer, decor, decoration);
-        
+
         SDL_RenderPresent(renderer);
         SDL_Delay(30);
     }

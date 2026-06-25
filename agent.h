@@ -6,7 +6,7 @@
 #include "liste.h"
 
 
-extern int perception_discrete;
+
 
 float dist(SDL_Rect a, SDL_Rect b);
 
@@ -22,6 +22,25 @@ float dist(SDL_Rect a, SDL_Rect b);
 */
 reponse_t action(int s, int x, int y, decor_t* nourriture, pnj_t* allie, pnj_t* ennemi, pnj_t* proie);
 
+float dist(SDL_Rect a, SDL_Rect b);
+
+float somme_tab(
+    float tab[7][14],
+    int k,
+    int vie,
+    int energie,
+    int faim,
+    int nb_nourriture,
+    int nb_allie,
+    int nb_ennemi,
+    int nb_proie,
+    float d_nourriture,
+    float d_allie,
+    float d_ennemi,
+    float d_proie,
+    float rapport_force,
+    float rapport_vitesse);
+
 /**
  * @brief calcule l'action que l'indivue souhaite faire
  * @param per la perception de l'individu
@@ -35,7 +54,7 @@ reponse_t reaction_entite(perception_t per,float tab[7][14]);
  * @param p la perception de l'individus
  * @return L'action que l'agent souhaite réaliser
  */
-reponse_t reaction (perception_t p);
+reponse_t reaction(perception_t p);
 
 
 #endif
